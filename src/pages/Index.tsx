@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -125,6 +126,28 @@ const Index = () => {
     );
   }, [currentShift, employees]);
 
+  // Update unavailable personnel based on special assignments
+  useEffect(() => {
+    const specialAssignmentIds = ['training', 'vacation', 'assignment', 'm-time'];
+    const unavailableEmployees: EmployeeProfile[] = [];
+    
+    // Collect all employees from special assignments
+    assignments.forEach(assignment => {
+      if (specialAssignmentIds.includes(assignment.id)) {
+        unavailableEmployees.push(...assignment.employees);
+      }
+    });
+
+    // Update unavailable personnel pool
+    setAssignments(prev => 
+      prev.map(assignment => 
+        assignment.id === 'unavailable' 
+          ? { ...assignment, employees: unavailableEmployees }
+          : assignment
+      )
+    );
+  }, [assignments]);
+
   const addEmployee = (employee: EmployeeProfile) => {
     setEmployees(prev => [...prev, employee]);
     setShowProfileForm(false);
@@ -165,6 +188,12 @@ const Index = () => {
     const destAssignment = assignments.find(a => a.id === destination.droppableId);
     
     if (!sourceAssignment || !destAssignment) return;
+
+    // Prevent dragging to unavailable personnel directly
+    if (destination.droppableId === 'unavailable') {
+      toast.error('Employees automatically become unavailable when assigned to Training, Vacation, Assignment, or M-Time');
+      return;
+    }
 
     // Check capacity
     if (destAssignment.employees.length >= destAssignment.maxCapacity && destination.droppableId !== source.droppableId) {
@@ -451,69 +480,54 @@ const Index = () => {
                 </CardContent>
               </Card>
 
-              {/* Unavailable Personnel Pool */}
+              {/* Unavailable Personnel Pool - READ ONLY */}
               <Card className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 shadow-2xl border-0">
                 <CardHeader className="bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-t-lg">
                   <CardTitle className="flex items-center gap-3 text-xl">
                     <UserMinus size={24} />
                     Unavailable Personnel
                     <Badge className="bg-white/20 text-white font-bold">
-                      {unavailablePool?.employees.length || 0}/20
+                      {unavailablePool?.employees.length || 0}
                     </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <Droppable droppableId="unavailable">
-                    {(provided, snapshot) => (
+                  <div className="min-h-32 max-h-64 overflow-y-auto p-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
+                    {unavailablePool?.employees.map((employee, index) => (
                       <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className={`min-h-32 max-h-64 overflow-y-auto p-3 rounded-xl border-2 border-dashed transition-all duration-300 ${
-                          snapshot.isDraggingOver 
-                            ? 'border-red-400 bg-red-100 dark:bg-red-950 shadow-inner scale-105' 
-                            : 'border-gray-300 dark:border-gray-600'
-                        }`}
+                        key={employee.id}
+                        className="p-3 mb-3 bg-white dark:bg-slate-700 rounded-xl border shadow-md opacity-75"
                       >
-                        {unavailablePool?.employees.map((employee, index) => (
-                          <Draggable key={employee.id} draggableId={employee.id} index={index}>
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`p-3 mb-3 bg-white dark:bg-slate-700 rounded-xl border shadow-md cursor-move transition-all duration-300 hover:shadow-lg ${
-                                  snapshot.isDragging ? 'rotate-2 shadow-2xl scale-105' : 'hover:scale-102'
-                                }`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="h-10 w-10 border-2 border-red-300">
-                                    <AvatarImage src={employee.image} alt={employee.name} />
-                                    <AvatarFallback className="text-xs font-bold bg-red-100">
-                                      {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-bold text-sm dark:text-slate-200 truncate">{employee.name}</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                                      <span>#{employee.badge}</span>
-                                      <span>|</span>
-                                      <span>{employee.gradeCode}</span>
-                                      <span>|</span>
-                                      <span>Age {employee.age}</span>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <div className={`w-3 h-3 rounded-full ${getRoleColor(employee.role)}`}></div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10 border-2 border-red-300">
+                            <AvatarImage src={employee.image} alt={employee.name} />
+                            <AvatarFallback className="text-xs font-bold bg-red-100">
+                              {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-sm dark:text-slate-200 truncate">{employee.name}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                              <span>#{employee.badge}</span>
+                              <span>|</span>
+                              <span>{employee.gradeCode}</span>
+                              <span>|</span>
+                              <span>Age {employee.age}</span>
+                            </div>
+                          </div>
+                          <div className={`w-3 h-3 rounded-full ${getRoleColor(employee.role)}`}></div>
+                        </div>
+                      </div>
+                    ))}
+                    {(unavailablePool?.employees.length || 0) === 0 && (
+                      <div className="flex items-center justify-center h-16 text-gray-400 dark:text-gray-500">
+                        <span className="text-sm">No unavailable personnel</span>
                       </div>
                     )}
-                  </Droppable>
+                  </div>
+                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">
+                    Employees automatically appear here when assigned to Training, Vacation, Assignment, or M-Time
+                  </div>
                 </CardContent>
               </Card>
             </div>
