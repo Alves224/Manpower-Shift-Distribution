@@ -13,6 +13,7 @@ import EnhancedGateCard from '@/components/EnhancedGateCard';
 import AssignmentManager from '@/components/AssignmentManager';
 import CommandStructureManager from '@/components/CommandStructureManager';
 import ManpowerDescription from '@/components/ManpowerDescription';
+
 interface Assignment {
   id: string;
   name: string;
@@ -22,6 +23,7 @@ interface Assignment {
   weaponAssigned?: boolean;
   area?: string;
 }
+
 const SHIFTS = ['SHIFT 1', 'SHIFT 2', 'SHIFT 3', 'SHIFT 4'];
 
 // Gate areas configuration
@@ -143,6 +145,7 @@ const EXAMPLE_EMPLOYEES: EmployeeProfile[] = [{
   image: PLACEHOLDER_IMAGES[7],
   weapons: ['MP5']
 }];
+
 const Index = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [currentShift, setCurrentShift] = useState('SHIFT 1');
@@ -234,7 +237,7 @@ const Index = () => {
       type: 'training',
       employees: [],
       maxCapacity: 5
-    }];
+    }]);
     setAssignments(initialAssignments);
   }, []);
 
@@ -268,10 +271,12 @@ const Index = () => {
       employees: unavailableEmployees
     } : assignment));
   }, [assignments]);
+
   const addEmployee = (employee: EmployeeProfile) => {
     setEmployees(prev => [...prev, employee]);
     setShowProfileForm(false);
   };
+
   const removeEmployee = (employeeId: string) => {
     setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
     setAssignments(prev => prev.map(assignment => ({
@@ -280,6 +285,7 @@ const Index = () => {
     })));
     toast.success('Employee removed');
   };
+
   const toggleWeapon = (assignmentId: string) => {
     setAssignments(prev => prev.map(assignment => assignment.id === assignmentId ? {
       ...assignment,
@@ -287,6 +293,7 @@ const Index = () => {
     } : assignment));
     toast.success('Weapon status updated');
   };
+
   const onDragEnd = (result: any) => {
     const {
       destination,
@@ -335,6 +342,7 @@ const Index = () => {
     });
     toast.success(`${draggedEmployee.name} assigned to ${destAssignment.name}`);
   };
+
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'supervisor':
@@ -347,6 +355,7 @@ const Index = () => {
         return 'bg-green-500';
     }
   };
+
   const getAssignmentColor = (type: string) => {
     switch (type) {
       case 'patrol':
@@ -359,27 +368,32 @@ const Index = () => {
         return 'border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950';
     }
   };
+
   const addAssignment = (newAssignment: Omit<Assignment, 'employees'>) => {
     setAssignments(prev => [...prev, {
       ...newAssignment,
       employees: []
     }]);
   };
+
   const deleteAssignment = (id: string) => {
     setAssignments(prev => prev.filter(assignment => assignment.id !== id));
   };
+
   const assignSupervisor = (employeeId: string | null) => {
     setSupervisorAssignments(prev => ({
       ...prev,
       [currentShift]: employeeId
     }));
   };
+
   const assignCoordinator = (employeeId: string | null) => {
     setCoordinatorAssignments(prev => ({
       ...prev,
       [currentShift]: employeeId
     }));
   };
+
   const currentShiftEmployees = employees.filter(emp => emp.shift === currentShift);
   const supervisor = supervisorAssignments[currentShift] ? employees.find(emp => emp.id === supervisorAssignments[currentShift]) : currentShiftEmployees.find(emp => emp.role === 'supervisor');
   const coordinator = coordinatorAssignments[currentShift] ? employees.find(emp => emp.id === coordinatorAssignments[currentShift]) : currentShiftEmployees.find(emp => emp.role === 'coordinator');
@@ -393,6 +407,12 @@ const Index = () => {
     acc[areaCode] = assignments.filter(a => a.area === areaCode);
     return acc;
   }, {} as Record<string, Assignment[]>);
+
+  // Calculate total gates
+  const totalGates = Object.values(GATE_AREAS).reduce((total, area) => {
+    return total + area.gates.length + area.vipGates.length;
+  }, 0);
+
   return <div className="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-slate-200 dark:from-slate-950 dark:via-gray-900 dark:to-slate-900">
       <div className="container mx-auto p-4 space-y-6">
         {/* Modern Header */}
@@ -440,8 +460,8 @@ const Index = () => {
               <div className="flex items-center gap-2">
                 <MapPin size={18} />
                 <div>
-                  <div className="text-xs opacity-90">Areas</div>
-                  <div className="text-lg font-bold">{Object.keys(GATE_AREAS).length}</div>
+                  <div className="text-xs opacity-90">Gates</div>
+                  <div className="text-lg font-bold">{totalGates}</div>
                 </div>
               </div>
             </div>
@@ -450,7 +470,7 @@ const Index = () => {
               <div className="flex items-center gap-2">
                 <Car size={18} />
                 <div>
-                  <div className="text-xs opacity-90">Patrol Units</div>
+                  <div className="text-xs opacity-90">Patrol</div>
                   <div className="text-lg font-bold">{patrolAssignments.length}</div>
                 </div>
               </div>
@@ -611,4 +631,5 @@ const Index = () => {
       </div>
     </div>;
 };
+
 export default Index;
