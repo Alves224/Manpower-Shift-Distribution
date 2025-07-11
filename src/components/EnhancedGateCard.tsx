@@ -8,6 +8,18 @@ import { Badge } from '@/components/ui/badge';
 import { Zap, Shield, Users, Crown } from 'lucide-react';
 import { EmployeeProfile } from './EmployeeProfileForm';
 
+interface WeaponImages {
+  MP5: string;
+  Glock: string;
+  AirTaser: string;
+}
+
+const WEAPON_IMAGES: WeaponImages = {
+  MP5: '/lovable-uploads/a77e4cce-32dd-4452-8a77-60284b5bfeba.png',
+  Glock: '/lovable-uploads/332f3c1f-d4cf-487f-b0a6-bb60d4b13299.png',
+  AirTaser: '/lovable-uploads/f33a5480-6810-4bdb-9202-949f44d8b836.png'
+};
+
 interface EnhancedGateCardProps {
   assignment: {
     id: string;
@@ -30,9 +42,9 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
 }) => {
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'supervisor': return <Crown size={12} className="text-red-500" />;
-      case 'coordinator': return <Shield size={12} className="text-blue-500" />;
-      default: return <Shield size={12} className="text-green-500" />;
+      case 'supervisor': return <Crown size={14} className="text-red-500" />;
+      case 'coordinator': return <Shield size={14} className="text-blue-500" />;
+      default: return <Shield size={14} className="text-green-500" />;
     }
   };
 
@@ -68,7 +80,7 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className={`min-h-24 p-2 rounded-lg border-2 border-dashed transition-all ${
+              className={`min-h-32 p-3 rounded-lg border-2 border-dashed transition-all ${
                 snapshot.isDraggingOver 
                   ? 'border-blue-400 bg-blue-50 dark:bg-blue-950 shadow-inner' 
                   : 'border-gray-300 dark:border-gray-600'
@@ -81,34 +93,48 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`p-2 mb-2 bg-white dark:bg-slate-700 rounded-lg text-xs border shadow-sm cursor-move transition-all hover:shadow-md ${
-                        snapshot.isDragging ? 'shadow-lg rotate-2 scale-105' : ''
+                      className={`p-4 mb-3 bg-white dark:bg-slate-700 rounded-xl border shadow-lg cursor-move transition-all hover:shadow-xl ${
+                        snapshot.isDragging ? 'shadow-2xl rotate-2 scale-105' : ''
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8 border-2 border-gray-200">
-                          <AvatarImage src={employee.image} alt={employee.name} />
-                          <AvatarFallback className="text-[10px] font-bold">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="h-12 w-12 border-3 border-gray-200 shadow-md">
+                          <AvatarImage src={employee.image} alt={employee.name} className="object-cover" />
+                          <AvatarFallback className="text-sm font-bold bg-gradient-to-br from-blue-100 to-purple-100">
                             {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1">
-                            <span className="font-semibold truncate dark:text-slate-200">{employee.name}</span>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-sm truncate dark:text-slate-200">{employee.name}</span>
                             {getRoleIcon(employee.role)}
                           </div>
-                          <div className="text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                            <span>#{employee.badge}</span>
-                            {employee.age && <span>Age: {employee.age}</span>}
-                            {employee.gradeCode && <Badge variant="outline" className="text-[8px] px-1 py-0">{employee.gradeCode}</Badge>}
+                          <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2 mb-2">
+                            <span className="font-semibold">#{employee.badge}</span>
+                            {employee.age && <span>• Age: {employee.age}</span>}
+                            {employee.gradeCode && (
+                              <Badge variant="outline" className="text-[10px] px-2 py-0 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                {employee.gradeCode}
+                              </Badge>
+                            )}
                           </div>
                           {employee.weapons && employee.weapons.length > 0 && (
-                            <div className="flex gap-1 mt-1">
-                              {employee.weapons.map(weapon => (
-                                <Badge key={weapon} variant="secondary" className="text-[8px] px-1 py-0">
-                                  {weapon}
-                                </Badge>
-                              ))}
+                            <div className="space-y-2">
+                              <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Weapons:</div>
+                              <div className="flex flex-wrap gap-2">
+                                {employee.weapons.map(weapon => (
+                                  <div key={weapon} className="flex items-center gap-1 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded-lg border border-orange-200 dark:border-orange-800">
+                                    <img
+                                      src={WEAPON_IMAGES[weapon as keyof WeaponImages]}
+                                      alt={weapon}
+                                      className="w-4 h-4 object-contain"
+                                    />
+                                    <span className="text-[10px] font-semibold text-orange-800 dark:text-orange-200">
+                                      {weapon}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -119,8 +145,8 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
               ))}
               {provided.placeholder}
               {assignment.employees.length === 0 && (
-                <div className="flex items-center justify-center h-16 text-gray-400 dark:text-gray-500">
-                  <Users size={20} />
+                <div className="flex items-center justify-center h-20 text-gray-400 dark:text-gray-500">
+                  <Users size={24} />
                   <span className="ml-2 text-sm">Empty</span>
                 </div>
               )}
