@@ -80,7 +80,7 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className={`min-h-60 p-4 rounded-lg border-2 border-dashed transition-all ${
+              className={`min-h-96 p-4 rounded-lg border-2 border-dashed transition-all ${
                 snapshot.isDraggingOver 
                   ? 'border-blue-400 bg-blue-50 dark:bg-blue-950 shadow-inner' 
                   : 'border-gray-300 dark:border-gray-600'
