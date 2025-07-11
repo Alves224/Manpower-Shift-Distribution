@@ -50,7 +50,7 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
 
   return (
     <Card className={`${getAssignmentColor(assignment.type)} transition-all hover:shadow-lg border-2 hover:border-blue-300 dark:hover:border-blue-600 h-fit`}>
-      <CardHeader className="pb-4">
+      <CardHeader className="pb-3">
         <CardTitle className="text-sm font-bold text-center dark:text-slate-200 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Shield size={14} className="text-blue-600 dark:text-blue-400" />
@@ -74,19 +74,19 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 pb-6">
+      <CardContent className="pt-0 pb-4">
         <Droppable droppableId={assignment.id}>
           {(provided, snapshot) => (
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className={`min-h-96 p-4 rounded-lg border-2 border-dashed transition-all ${
+              className={`min-h-48 p-3 rounded-lg border-2 border-dashed transition-all ${
                 snapshot.isDraggingOver 
                   ? 'border-blue-400 bg-blue-50 dark:bg-blue-950 shadow-inner' 
                   : 'border-gray-300 dark:border-gray-600'
               }`}
             >
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {assignment.employees.map((employee, index) => (
                   <Draggable key={employee.id} draggableId={employee.id} index={index}>
                     {(provided, snapshot) => (
@@ -94,7 +94,7 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className={`p-5 bg-white dark:bg-slate-700 rounded-xl border shadow-lg cursor-move transition-all hover:shadow-xl min-w-[340px] mb-4 ${
+                        className={`p-4 bg-white dark:bg-slate-700 rounded-xl border shadow-lg cursor-move transition-all hover:shadow-xl min-w-[320px] mb-3 ${
                           snapshot.isDragging ? 'shadow-2xl rotate-2 scale-105 z-50' : ''
                         }`}
                         style={{
@@ -154,9 +154,9 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
               </div>
               {provided.placeholder}
               {assignment.employees.length === 0 && (
-                <div className="flex items-center justify-center h-32 text-gray-400 dark:text-gray-500">
-                  <Users size={32} />
-                  <span className="ml-3 text-lg">Empty</span>
+                <div className="flex items-center justify-center h-24 text-gray-400 dark:text-gray-500">
+                  <Users size={24} />
+                  <span className="ml-2 text-sm">Empty</span>
                 </div>
               )}
             </div>
