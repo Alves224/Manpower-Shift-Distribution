@@ -1,4 +1,3 @@
-
 // Application State
 let state = {
     employees: [],
@@ -8,43 +7,42 @@ let state = {
         available: [],
         unavailable: [],
         gates: {},
-        patrols: {},
         special: {}
     },
     supervisorAssignments: {},
     coordinatorAssignments: {}
 };
 
-// Gate Areas Configuration
+// Gate Areas Configuration - Updated with exact gate listings
 const GATE_AREAS = {
     NGL: {
         name: 'NGL Area',
-        gates: ['G #1', 'G #2', 'G #3', 'G #21'],
-        vipGates: ['V/P #05', 'V/P #014'],
+        gates: ['Gate #1', 'Gate #2', 'Gate #3', 'Gate #21'],
+        vipGates: ['V/P 05', 'V/P 014'],
         color: 'ngl'
     },
     YRD: {
         name: 'YRD Area',
-        gates: ['G #16', 'G #17'],
-        vipGates: ['V/P #07', 'V/P #011'],
+        gates: ['Gate #16', 'Gate #17'],
+        vipGates: ['V/P 07', 'V/P 011'],
         color: 'yrd'
     },
     BUP: {
         name: 'BUP Area',
-        gates: ['G #18'],
-        vipGates: ['V/P #03'],
+        gates: ['Gate #18'],
+        vipGates: ['V/P 03'],
         color: 'bup'
     },
     HUH: {
         name: 'HUH Area',
-        gates: ['G #23', 'G #24'],
-        vipGates: ['V/P #022', 'V/P #023'],
+        gates: ['Gate #23', 'Gate #24'],
+        vipGates: ['V/P 022', 'V/P 023'],
         color: 'huh'
     },
     YNT: {
         name: 'YNT Area',
-        gates: ['G #4', 'G #5', 'G #9', 'G #11'],
-        vipGates: ['V/P #06', 'V/P #09', 'V/P #010'],
+        gates: ['Gate #9', 'Gate #11', 'Gate #4', 'Gate #5'],
+        vipGates: ['V/P 06', 'V/P 09', 'V/P 010'],
         color: 'ynt'
     }
 };
@@ -163,7 +161,7 @@ function initializeAssignments() {
     // Initialize available personnel
     state.assignments.available = state.employees.filter(emp => emp.shift === state.currentShift);
     
-    // Initialize gates
+    // Initialize gates - Remove patrol units, only gates now
     Object.entries(GATE_AREAS).forEach(([areaCode, areaData]) => {
         [...areaData.gates, ...areaData.vipGates].forEach(gateName => {
             const gateId = `gate-${gateName.replace(/[^a-zA-Z0-9]/g, '')}`;
@@ -177,18 +175,6 @@ function initializeAssignments() {
             };
         });
     });
-    
-    // Initialize patrols
-    for (let i = 1; i <= 8; i++) {
-        const patrolId = `patrol-${i}`;
-        state.assignments.patrols[patrolId] = {
-            id: patrolId,
-            name: `Patrol ${i}`,
-            employees: [],
-            maxCapacity: 1,
-            weaponAssigned: false
-        };
-    }
     
     // Initialize special assignments
     ['Training', 'Vacation', 'Assignment', 'M-Time'].forEach(name => {
@@ -275,10 +261,6 @@ function deleteEmployee(employeeId) {
             gate.employees = gate.employees.filter(emp => emp.id !== employeeId);
         });
         
-        Object.values(state.assignments.patrols).forEach(patrol => {
-            patrol.employees = patrol.employees.filter(emp => emp.id !== employeeId);
-        });
-        
         Object.values(state.assignments.special).forEach(special => {
             special.employees = special.employees.filter(emp => emp.id !== employeeId);
         });
@@ -317,10 +299,6 @@ function switchShift(shift) {
         gate.employees = gate.employees.filter(emp => emp.shift === shift);
     });
     
-    Object.values(state.assignments.patrols).forEach(patrol => {
-        patrol.employees = patrol.employees.filter(emp => emp.shift === shift);
-    });
-    
     Object.values(state.assignments.special).forEach(special => {
         special.employees = special.employees.filter(emp => emp.shift === shift);
     });
@@ -348,7 +326,6 @@ function updateDisplay() {
     updatePersonnelLists();
     updateCommandStructure();
     updateGateAssignments();
-    updatePatrolAssignments();
     updateSpecialAssignments();
     updateUnavailablePersonnel();
 }
@@ -357,6 +334,12 @@ function updateStats() {
     const currentShiftEmployees = state.employees.filter(emp => emp.shift === state.currentShift);
     document.getElementById('activePersonnel').textContent = currentShiftEmployees.length;
     document.getElementById('currentShift').textContent = state.currentShift.replace('SHIFT ', '');
+    
+    // Update total gates count
+    const totalGates = Object.values(GATE_AREAS).reduce((total, area) => {
+        return total + area.gates.length + area.vipGates.length;
+    }, 0);
+    document.getElementById('totalGates').textContent = totalGates;
 }
 
 function updatePersonnelLists() {
@@ -446,16 +429,6 @@ function updateGateAssignments() {
     });
 }
 
-function updatePatrolAssignments() {
-    const container = document.getElementById('patrolUnits');
-    container.innerHTML = '';
-    
-    Object.values(state.assignments.patrols).forEach(patrol => {
-        const patrolCard = createGateCard(patrol);
-        container.appendChild(patrolCard);
-    });
-}
-
 function updateSpecialAssignments() {
     const container = document.getElementById('specialAssignments');
     container.innerHTML = '';
@@ -521,9 +494,15 @@ function createGateCard(assignment) {
     const card = document.createElement('div');
     card.className = 'gate-card';
     
+    // Check if it's a vehicle patrol
+    const isVehiclePatrol = assignment.name.startsWith('V/P');
+    
     card.innerHTML = `
         <div class="gate-header">
-            <div class="gate-name">${assignment.name}</div>
+            <div class="gate-name">
+                ${isVehiclePatrol ? '<i class="fas fa-car"></i> ' : ''}
+                ${assignment.name}
+            </div>
             ${assignment.weaponAssigned !== undefined ? `
                 <button class="weapon-toggle ${assignment.weaponAssigned ? 'active' : ''}" 
                         onclick="toggleWeapon('${assignment.id}')">
@@ -531,7 +510,7 @@ function createGateCard(assignment) {
                 </button>
             ` : ''}
         </div>
-        <div class="gate-content" data-drop-zone="${assignment.id}" data-assignment-type="${assignment.id.split('-')[0]}">
+        <div class="gate-content" data-drop-zone="${assignment.id}" data-assignment-type="gate">
             ${assignment.employees.length > 0 ? '' : '<div class="empty">Drop employee here</div>'}
         </div>
     `;
@@ -550,7 +529,7 @@ function createGateCard(assignment) {
 }
 
 function toggleWeapon(assignmentId) {
-    const assignment = state.assignments.gates[assignmentId] || state.assignments.patrols[assignmentId];
+    const assignment = state.assignments.gates[assignmentId];
     if (assignment) {
         assignment.weaponAssigned = !assignment.weaponAssigned;
         updateDisplay();
@@ -632,12 +611,6 @@ function findEmployeeSource(employeeId) {
         }
     }
     
-    for (const [patrolId, patrol] of Object.entries(state.assignments.patrols)) {
-        if (patrol.employees.find(emp => emp.id === employeeId)) {
-            return { type: 'patrol', id: patrolId };
-        }
-    }
-    
     for (const [specialId, special] of Object.entries(state.assignments.special)) {
         if (special.employees.find(emp => emp.id === employeeId)) {
             return { type: 'special', id: specialId };
@@ -660,12 +633,6 @@ function removeEmployeeFromSource(employeeId, source) {
                     state.assignments.gates[source.id].employees.filter(emp => emp.id !== employeeId);
             }
             break;
-        case 'patrol':
-            if (state.assignments.patrols[source.id]) {
-                state.assignments.patrols[source.id].employees = 
-                    state.assignments.patrols[source.id].employees.filter(emp => emp.id !== employeeId);
-            }
-            break;
         case 'special':
             if (state.assignments.special[source.id]) {
                 state.assignments.special[source.id].employees = 
@@ -680,8 +647,6 @@ function addEmployeeToTarget(employee, dropZone, assignmentType) {
         state.assignments.available.push(employee);
     } else if (assignmentType === 'gate' && state.assignments.gates[dropZone]) {
         state.assignments.gates[dropZone].employees.push(employee);
-    } else if (assignmentType === 'patrol' && state.assignments.patrols[dropZone]) {
-        state.assignments.patrols[dropZone].employees.push(employee);
     } else if (state.assignments.special[dropZone]) {
         state.assignments.special[dropZone].employees.push(employee);
     }
@@ -693,7 +658,6 @@ function getAssignmentByZone(dropZone, assignmentType) {
     }
     
     return state.assignments.gates[dropZone] || 
-           state.assignments.patrols[dropZone] || 
            state.assignments.special[dropZone];
 }
 
