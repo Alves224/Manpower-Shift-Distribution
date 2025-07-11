@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Users, Shield, UserMinus, MapPin, Trash2 } from 'lucide-react';
+import { Plus, Users, Shield, Car, Clock, UserPlus, Trash2, Moon, Sun, Settings, Zap, Activity, BarChart3, UserMinus, MapPin, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import EmployeeProfileForm, { EmployeeProfile } from '@/components/EmployeeProfileForm';
 import ShiftHierarchy from '@/components/ShiftHierarchy';
@@ -14,16 +16,6 @@ import CommandStructureManager from '@/components/CommandStructureManager';
 import ManpowerDescription from '@/components/ManpowerDescription';
 import AreaNotesManager from '@/components/AreaNotesManager';
 import ComprehensiveDescriptionManager from '@/components/ComprehensiveDescriptionManager';
-import BulkAssignmentManager from '@/components/BulkAssignmentManager';
-import AdvancedSearch from '@/components/AdvancedSearch';
-import AttendanceTracker from '@/components/AttendanceTracker';
-import EmployeeSkillsManager from '@/components/EmployeeSkillsManager';
-import StatsCards from '@/components/StatsCards';
-import HeaderActions from '@/components/HeaderActions';
-import ShiftSelector from '@/components/ShiftSelector';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { GATE_AREAS, SHIFTS } from '@/utils/constants';
-import { generateId, getRoleColor, getAssignmentColor } from '@/utils/helpers';
 
 interface Assignment {
   id: string;
@@ -34,6 +26,42 @@ interface Assignment {
   weaponAssigned?: boolean;
   area?: string;
 }
+
+const SHIFTS = ['SHIFT 1', 'SHIFT 2', 'SHIFT 3', 'SHIFT 4'];
+
+// Gate areas configuration
+const GATE_AREAS = {
+  NGL: {
+    name: 'NGL Area',
+    gates: ['G #1', 'G #2', 'G #3', 'G #21'],
+    vipGates: ['V/P #05', 'V/P #014'],
+    color: 'from-blue-500 to-cyan-500'
+  },
+  YRD: {
+    name: 'YRD Area',
+    gates: ['G #16', 'G #17'],
+    vipGates: ['V/P #07', 'V/P #011'],
+    color: 'from-green-500 to-emerald-500'
+  },
+  BUP: {
+    name: 'BUP Area',
+    gates: ['G #18'],
+    vipGates: ['V/P #03'],
+    color: 'from-purple-500 to-pink-500'
+  },
+  HUH: {
+    name: 'HUH Area',
+    gates: ['G #23', 'G #24'],
+    vipGates: ['V/P #022', 'V/P #023'],
+    color: 'from-orange-500 to-red-500'
+  },
+  YNT: {
+    name: 'YNT Area',
+    gates: ['G #4', 'G #5', 'G #9', 'G #11'],
+    vipGates: ['V/P #06', 'V/P #09', 'V/P #010'],
+    color: 'from-indigo-500 to-purple-500'
+  }
+};
 
 // Placeholder images for employees
 const PLACEHOLDER_IMAGES = [
@@ -140,24 +168,21 @@ const EXAMPLE_EMPLOYEES: EmployeeProfile[] = [
 ];
 
 const Index = () => {
-  // Use localStorage for persistence
-  const [darkMode, setDarkMode] = useLocalStorage('darkMode', false);
-  const [currentShift, setCurrentShift] = useLocalStorage('currentShift', 'SHIFT 1');
-  const [employees, setEmployees] = useLocalStorage<EmployeeProfile[]>('employees', EXAMPLE_EMPLOYEES);
-  const [assignments, setAssignments] = useLocalStorage<Assignment[]>('assignments', []);
-  const [supervisorAssignments, setSupervisorAssignments] = useLocalStorage<Record<string, string | null>>('supervisorAssignments', {});
-  const [coordinatorAssignments, setCoordinatorAssignments] = useLocalStorage<Record<string, string | null>>('coordinatorAssignments', {});
-  
-  // UI state
+  const [darkMode, setDarkMode] = useState(false);
+  const [currentShift, setCurrentShift] = useState('SHIFT 1');
+  const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [showNotesManager, setShowNotesManager] = useState(false);
   const [showDescriptionManager, setShowDescriptionManager] = useState(false);
-  const [showBulkAssignment, setShowBulkAssignment] = useState(false);
-  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
-  const [showAttendanceTracker, setShowAttendanceTracker] = useState(false);
-  const [showSkillsManager, setShowSkillsManager] = useState(false);
-  const [filteredEmployees, setFilteredEmployees] = useState<EmployeeProfile[]>([]);
-  const [selectedEmployeeForSkills, setSelectedEmployeeForSkills] = useState<EmployeeProfile | null>(null);
+  const [supervisorAssignments, setSupervisorAssignments] = useState<Record<string, string | null>>({});
+  const [coordinatorAssignments, setCoordinatorAssignments] = useState<Record<string, string | null>>({});
+
+  // Initialize employees with sample data
+  useEffect(() => {
+    console.log('Initializing employees with sample data...');
+    setEmployees(EXAMPLE_EMPLOYEES);
+  }, []);
 
   // Toggle dark mode
   useEffect(() => {
@@ -170,90 +195,88 @@ const Index = () => {
 
   // Initialize assignments with categorized gates
   useEffect(() => {
-    if (assignments.length === 0) {
-      console.log('Initializing assignments...');
-      const initialAssignments: Assignment[] = [
-        // Available pool
-        {
-          id: 'unassigned',
-          name: 'Available Employees',
-          type: 'gate',
+    console.log('Initializing assignments...');
+    const initialAssignments: Assignment[] = [
+      // Available pool
+      {
+        id: 'unassigned',
+        name: 'Available Employees',
+        type: 'gate',
+        employees: [],
+        maxCapacity: 45
+      },
+      // Unavailable pool
+      {
+        id: 'unavailable',
+        name: 'Unavailable Personnel',
+        type: 'vacation',
+        employees: [],
+        maxCapacity: 20
+      },
+      // Create assignments for each area's gates
+      ...Object.entries(GATE_AREAS).flatMap(([areaCode, areaData]) => [
+        // Regular gates
+        ...areaData.gates.map(gateName => ({
+          id: `gate-${gateName.replace(/[^a-zA-Z0-9]/g, '')}`,
+          name: gateName,
+          type: 'gate' as const,
           employees: [],
-          maxCapacity: 45
-        },
-        // Unavailable pool
-        {
-          id: 'unavailable',
-          name: 'Unavailable Personnel',
-          type: 'vacation',
-          employees: [],
-          maxCapacity: 20
-        },
-        // Create assignments for each area's gates
-        ...Object.entries(GATE_AREAS).flatMap(([areaCode, areaData]) => [
-          // Regular gates
-          ...areaData.gates.map(gateName => ({
-            id: `gate-${gateName.replace(/[^a-zA-Z0-9]/g, '')}`,
-            name: gateName,
-            type: 'gate' as const,
-            employees: [],
-            maxCapacity: 5,
-            weaponAssigned: false,
-            area: areaCode
-          })),
-          // VIP gates
-          ...areaData.vipGates.map(vipGate => ({
-            id: `vip-${vipGate.replace(/[^a-zA-Z0-9]/g, '')}`,
-            name: vipGate,
-            type: 'gate' as const,
-            employees: [],
-            maxCapacity: 5,
-            weaponAssigned: false,
-            area: areaCode
-          }))
-        ]),
-        // Patrol assignments
-        ...Array.from({ length: 8 }, (_, i) => ({
-          id: `patrol-${i + 1}`,
-          name: `Patrol ${i + 1}`,
-          type: 'patrol' as const,
-          employees: [],
-          maxCapacity: 1,
-          weaponAssigned: false
+          maxCapacity: 5,
+          weaponAssigned: false,
+          area: areaCode
         })),
-        // Special assignments
-        {
-          id: 'training',
-          name: 'Training',
-          type: 'training',
+        // VIP gates
+        ...areaData.vipGates.map(vipGate => ({
+          id: `vip-${vipGate.replace(/[^a-zA-Z0-9]/g, '')}`,
+          name: vipGate,
+          type: 'gate' as const,
           employees: [],
-          maxCapacity: 10
-        },
-        {
-          id: 'vacation',
-          name: 'Vacation',
-          type: 'vacation',
-          employees: [],
-          maxCapacity: 20
-        },
-        {
-          id: 'assignment',
-          name: 'Assignment',
-          type: 'training',
-          employees: [],
-          maxCapacity: 5
-        },
-        {
-          id: 'm-time',
-          name: 'M-Time',
-          type: 'training',
-          employees: [],
-          maxCapacity: 5
-        }
-      ];
-      setAssignments(initialAssignments);
-    }
-  }, [assignments, setAssignments]);
+          maxCapacity: 5,
+          weaponAssigned: false,
+          area: areaCode
+        }))
+      ]),
+      // Patrol assignments
+      ...Array.from({ length: 8 }, (_, i) => ({
+        id: `patrol-${i + 1}`,
+        name: `Patrol ${i + 1}`,
+        type: 'patrol' as const,
+        employees: [],
+        maxCapacity: 1,
+        weaponAssigned: false
+      })),
+      // Special assignments
+      {
+        id: 'training',
+        name: 'Training',
+        type: 'training',
+        employees: [],
+        maxCapacity: 10
+      },
+      {
+        id: 'vacation',
+        name: 'Vacation',
+        type: 'vacation',
+        employees: [],
+        maxCapacity: 20
+      },
+      {
+        id: 'assignment',
+        name: 'Assignment',
+        type: 'training',
+        employees: [],
+        maxCapacity: 5
+      },
+      {
+        id: 'm-time',
+        name: 'M-Time',
+        type: 'training',
+        employees: [],
+        maxCapacity: 5
+      }
+    ];
+    setAssignments(initialAssignments);
+  }, []);
 
   // Initialize unassigned pool with current shift employees
   useEffect(() => {
@@ -268,7 +291,7 @@ const Index = () => {
           : { ...assignment, employees: assignment.employees.filter(emp => emp.shift === currentShift) }
       ));
     }
-  }, [currentShift, employees, setAssignments]);
+  }, [currentShift, employees]);
 
   // Update unavailable personnel based on special assignments
   useEffect(() => {
@@ -286,11 +309,11 @@ const Index = () => {
         ? { ...assignment, employees: unavailableEmployees }
         : assignment
     ));
-  }, [assignments, setAssignments]);
+  }, [assignments]);
 
   const addEmployee = (employee: EmployeeProfile) => {
     console.log('Adding new employee:', employee.name);
-    const newEmployee = { ...employee, id: generateId() };
+    const newEmployee = { ...employee, id: `emp-${Date.now()}` };
     setEmployees(prev => [...prev, newEmployee]);
     toast.success(`${employee.name} added successfully!`);
     setShowProfileForm(false);
@@ -390,6 +413,24 @@ const Index = () => {
     toast.success(`${draggedEmployee.name} assigned to ${destAssignment.name}`);
   };
 
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'supervisor': return 'bg-red-500';
+      case 'coordinator': return 'bg-blue-500';
+      case 'patrol': return 'bg-purple-500';
+      default: return 'bg-green-500';
+    }
+  };
+
+  const getAssignmentColor = (type: string) => {
+    switch (type) {
+      case 'patrol': return 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950';
+      case 'training': return 'border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950';
+      case 'vacation': return 'border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950';
+      default: return 'border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950';
+    }
+  };
+
   const addAssignment = (newAssignment: Omit<Assignment, 'employees'>) => {
     setAssignments(prev => [...prev, { ...newAssignment, employees: [] }]);
   };
@@ -437,47 +478,6 @@ const Index = () => {
     assignmentsCount: assignments.length
   });
 
-  const handleBulkAssign = (employeeIds: string[], assignmentId: string) => {
-    const sourceAssignment = assignments.find(a => a.id === 'unassigned');
-    const destAssignment = assignments.find(a => a.id === assignmentId);
-    
-    if (!sourceAssignment || !destAssignment) return;
-
-    // Check capacity
-    if (destAssignment.employees.length + employeeIds.length > destAssignment.maxCapacity) {
-      toast.error(`Assignment would exceed capacity (${destAssignment.maxCapacity})`);
-      return;
-    }
-
-    const employeesToMove = sourceAssignment.employees.filter(emp => employeeIds.includes(emp.id));
-
-    setAssignments(prev => prev.map(assignment => {
-      if (assignment.id === 'unassigned') {
-        return {
-          ...assignment,
-          employees: assignment.employees.filter(emp => !employeeIds.includes(emp.id))
-        };
-      }
-      if (assignment.id === assignmentId) {
-        return {
-          ...assignment,
-          employees: [...assignment.employees, ...employeesToMove]
-        };
-      }
-      return assignment;
-    }));
-
-    toast.success(`${employeeIds.length} employees assigned successfully`);
-  };
-
-  const handleFilteredResults = (results: EmployeeProfile[]) => {
-    setFilteredEmployees(results);
-  };
-
-  const handleClearFilters = () => {
-    setFilteredEmployees([]);
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-slate-200 dark:from-slate-950 dark:via-gray-900 dark:to-slate-900">
       <div className="container mx-auto p-4 space-y-6">
@@ -496,22 +496,99 @@ const Index = () => {
               </div>
             </div>
             
-            <HeaderActions
-              darkMode={darkMode}
-              onToggleDarkMode={setDarkMode}
-              onAddEmployee={() => setShowProfileForm(true)}
-              onShowNotes={() => setShowNotesManager(true)}
-              onShowDescription={() => setShowDescriptionManager(true)}
-            />
+            <div className="flex items-center gap-3">
+              <Button 
+                onClick={() => {
+                  console.log('Add Employee button clicked');
+                  setShowProfileForm(true);
+                }} 
+                className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-md" 
+                size="sm"
+              >
+                <UserPlus size={16} className="mr-2" />
+                Add Employee
+              </Button>
+              
+              <Button 
+                onClick={() => {
+                  console.log('Notes & Planning button clicked');
+                  setShowNotesManager(true);
+                }} 
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md" 
+                size="sm"
+              >
+                <FileText size={16} className="mr-2" />
+                Notes & Planning
+              </Button>
+
+              <Button 
+                onClick={() => {
+                  console.log('Description Manager button clicked');
+                  setShowDescriptionManager(true);
+                }} 
+                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-md" 
+                size="sm"
+              >
+                <BarChart3 size={16} className="mr-2" />
+                Description Manager
+              </Button>
+              
+              <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 p-2 rounded-lg">
+                <Sun className="h-4 w-4" />
+                <Switch 
+                  checked={darkMode} 
+                  onCheckedChange={(checked) => {
+                    console.log('Dark mode toggled:', checked);
+                    setDarkMode(checked);
+                  }} 
+                />
+                <Moon className="h-4 w-4" />
+              </div>
+            </div>
           </div>
           
           {/* Compact Stats Cards */}
-          <StatsCards
-            activePersonnel={currentShiftEmployees.length}
-            totalGates={totalGates}
-            patrolCount={patrolAssignments.length}
-            currentShift={currentShift}
-          />
+          <div className="grid grid-cols-4 gap-3">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-3 rounded-lg shadow-sm">
+              <div className="flex items-center gap-2">
+                <Users size={18} />
+                <div>
+                  <div className="text-xs opacity-90">Active Personnel</div>
+                  <div className="text-lg font-bold">{currentShiftEmployees.length}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-3 rounded-lg shadow-sm">
+              <div className="flex items-center gap-2">
+                <MapPin size={18} />
+                <div>
+                  <div className="text-xs opacity-90">Gates</div>
+                  <div className="text-lg font-bold">{totalGates}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-lg shadow-sm">
+              <div className="flex items-center gap-2">
+                <Car size={18} />
+                <div>
+                  <div className="text-xs opacity-90">Patrol</div>
+                  <div className="text-lg font-bold">{patrolAssignments.length}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-3 rounded-lg shadow-sm">
+              <div className="flex items-center gap-2">
+                <Activity size={18} />
+                <div>
+                  <div className="text-xs opacity-90">Current Shift</div>
+                  <div className="text-lg font-bold">{currentShift.replace('SHIFT ', '')}</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Employee Profile Form */}
@@ -520,71 +597,6 @@ const Index = () => {
             currentShift={currentShift} 
             onAddEmployee={addEmployee} 
             onClose={() => setShowProfileForm(false)} 
-          />
-        )}
-
-        {/* Enhanced Features Modals */}
-        {showBulkAssignment && (
-          <BulkAssignmentManager 
-            availableEmployees={currentShiftEmployees}
-            assignments={assignments}
-            onBulkAssign={handleBulkAssign}
-          />
-        )}
-
-        {showAdvancedSearch && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                    Advanced Search & Filter
-                  </h2>
-                  <Button onClick={() => setShowAdvancedSearch(false)} variant="ghost" size="sm">
-                    ✕
-                  </Button>
-                </div>
-                <AdvancedSearch 
-                  employees={employees}
-                  onFilteredResults={handleFilteredResults}
-                  onClearFilters={handleClearFilters}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showAttendanceTracker && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                    Attendance Tracker
-                  </h2>
-                  <Button onClick={() => setShowAttendanceTracker(false)} variant="ghost" size="sm">
-                    ✕
-                  </Button>
-                </div>
-                <AttendanceTracker 
-                  employees={currentShiftEmployees}
-                  currentShift={currentShift}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showSkillsManager && selectedEmployeeForSkills && (
-          <EmployeeSkillsManager 
-            employee={selectedEmployeeForSkills}
-            onUpdateEmployee={(updatedEmployee) => {
-              setEmployees(prev => prev.map(emp => 
-                emp.id === updatedEmployee.id ? updatedEmployee : emp
-              ));
-              setShowSkillsManager(false);
-              setSelectedEmployeeForSkills(null);
-            }}
           />
         )}
 
@@ -631,11 +643,33 @@ const Index = () => {
         )}
 
         {/* Shift Selector */}
-        <ShiftSelector
-          currentShift={currentShift}
-          shifts={SHIFTS}
-          onShiftChange={setCurrentShift}
-        />
+        <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                <Clock size={18} />
+                <span className="font-medium">Active Shift:</span>
+              </div>
+              {SHIFTS.map(shift => (
+                <Button 
+                  key={shift} 
+                  variant={currentShift === shift ? "default" : "outline"}
+                  onClick={() => {
+                    console.log('Shift changed to:', shift);
+                    setCurrentShift(shift);
+                  }}
+                  className={currentShift === shift 
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-md' 
+                    : 'border-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }
+                  size="sm"
+                >
+                  {shift}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Assignment Manager */}
         <AssignmentManager 
@@ -829,7 +863,7 @@ const Index = () => {
               <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
-                    <Users className="text-white" size={20} />
+                    <BarChart3 className="text-white" size={20} />
                   </div>
                   <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Special Assignments</h3>
                 </div>
