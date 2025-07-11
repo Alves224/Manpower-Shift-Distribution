@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Crown, Shield, Settings, UserX } from 'lucide-react';
+import { Crown, Shield, Settings, UserX, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { EmployeeProfile } from './EmployeeProfileForm';
 
@@ -14,6 +14,7 @@ interface CommandStructureManagerProps {
   coordinator?: EmployeeProfile;
   onAssignSupervisor: (employeeId: string | null) => void;
   onAssignCoordinator: (employeeId: string | null) => void;
+  onDeleteEmployee?: (employeeId: string) => void;
 }
 
 const CommandStructureManager: React.FC<CommandStructureManagerProps> = ({
@@ -22,7 +23,8 @@ const CommandStructureManager: React.FC<CommandStructureManagerProps> = ({
   supervisor,
   coordinator,
   onAssignSupervisor,
-  onAssignCoordinator
+  onAssignCoordinator,
+  onDeleteEmployee
 }) => {
   const [showManager, setShowManager] = useState(false);
 
@@ -53,6 +55,22 @@ const CommandStructureManager: React.FC<CommandStructureManagerProps> = ({
       const employee = employees.find(emp => emp.id === employeeId);
       onAssignCoordinator(employeeId);
       toast.success(`${employee?.name} assigned as Coordinator`);
+    }
+  };
+
+  const handleDeleteEmployee = (employeeId: string) => {
+    const employee = employees.find(emp => emp.id === employeeId);
+    if (employee && onDeleteEmployee) {
+      // Remove from supervisor/coordinator assignments if they are assigned
+      if (supervisor?.id === employeeId) {
+        onAssignSupervisor(null);
+      }
+      if (coordinator?.id === employeeId) {
+        onAssignCoordinator(null);
+      }
+      
+      onDeleteEmployee(employeeId);
+      toast.success(`${employee.name} has been removed`);
     }
   };
 
@@ -144,6 +162,42 @@ const CommandStructureManager: React.FC<CommandStructureManagerProps> = ({
             </SelectContent>
           </Select>
         </div>
+
+        {/* Employee Management Section */}
+        {onDeleteEmployee && currentShiftEmployees.length > 0 && (
+          <div className="space-y-3 border-t pt-4">
+            <h4 className="font-semibold flex items-center gap-2">
+              <Trash2 size={18} className="text-red-600" />
+              Employee Management
+            </h4>
+            <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
+              {currentShiftEmployees.map(employee => (
+                <div key={employee.id} className="flex items-center justify-between p-2 border rounded-lg bg-white/50 dark:bg-slate-700/50">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${
+                      employee.role === 'supervisor' ? 'bg-red-500' :
+                      employee.role === 'coordinator' ? 'bg-blue-500' :
+                      employee.role === 'patrol' ? 'bg-purple-500' : 'bg-green-500'
+                    }`} />
+                    <span className="font-medium">{employee.name}</span>
+                    <span className="text-sm text-gray-500">#{employee.badge}</span>
+                    <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded capitalize">
+                      {employee.role}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteEmployee(employee.id)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

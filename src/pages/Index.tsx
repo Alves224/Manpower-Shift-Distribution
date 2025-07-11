@@ -291,6 +291,28 @@ const Index = () => {
       ...assignment,
       employees: assignment.employees.filter(emp => emp.id !== employeeId)
     })));
+    
+    // Clear supervisor/coordinator assignments if the deleted employee was assigned
+    setSupervisorAssignments(prev => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach(shift => {
+        if (updated[shift] === employeeId) {
+          updated[shift] = null;
+        }
+      });
+      return updated;
+    });
+    
+    setCoordinatorAssignments(prev => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach(shift => {
+        if (updated[shift] === employeeId) {
+          updated[shift] = null;
+        }
+      });
+      return updated;
+    });
+    
     toast.success('Employee removed');
   };
 
@@ -518,7 +540,15 @@ const Index = () => {
         <AssignmentManager assignments={assignments} onAddAssignment={addAssignment} onDeleteAssignment={deleteAssignment} />
 
         {/* Command Structure Manager */}
-        <CommandStructureManager shift={currentShift} employees={employees} supervisor={supervisor} coordinator={coordinator} onAssignSupervisor={assignSupervisor} onAssignCoordinator={assignCoordinator} />
+        <CommandStructureManager 
+          shift={currentShift} 
+          employees={employees} 
+          supervisor={supervisor} 
+          coordinator={coordinator} 
+          onAssignSupervisor={assignSupervisor} 
+          onAssignCoordinator={assignCoordinator}
+          onDeleteEmployee={removeEmployee}
+        />
 
         {/* Manpower Description */}
         <ManpowerDescription currentShift={currentShift} assignments={assignments} supervisor={supervisor} coordinator={coordinator} />
