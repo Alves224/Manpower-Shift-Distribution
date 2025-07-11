@@ -12,6 +12,7 @@ import ShiftHierarchy from '@/components/ShiftHierarchy';
 import EnhancedGateCard from '@/components/EnhancedGateCard';
 import AssignmentManager from '@/components/AssignmentManager';
 import CommandStructureManager from '@/components/CommandStructureManager';
+import ManpowerDescription from '@/components/ManpowerDescription';
 
 interface Assignment {
   id: string;
@@ -457,6 +458,14 @@ const Index = () => {
           coordinator={coordinator}
           onAssignSupervisor={assignSupervisor}
           onAssignCoordinator={assignCoordinator}
+        />
+
+        {/* Manpower Description */}
+        <ManpowerDescription
+          currentShift={currentShift}
+          assignments={assignments}
+          supervisor={supervisor}
+          coordinator={coordinator}
         />
 
         {/* Shift Hierarchy */}
