@@ -424,24 +424,18 @@ const Index = () => {
     }));
   };
 
-  const currentShiftEmployees = employees.filter(emp => emp.shift === currentShift);
-  const supervisor = supervisorAssignments[currentShift] ? employees.find(emp => emp.id === supervisorAssignments[currentShift]) : currentShiftEmployees.find(emp => emp.role === 'supervisor');
-  const coordinator = coordinatorAssignments[currentShift] ? employees.find(emp => emp.id === coordinatorAssignments[currentShift]) : currentShiftEmployees.find(emp => emp.role === 'coordinator');
-  const unassignedPool = assignments.find(a => a.id === 'unassigned');
-  const unavailablePool = assignments.find(a => a.id === 'unavailable');
-  const patrolAssignments = assignments.filter(a => a.type === 'patrol');
-  const specialAssignments = assignments.filter(a => (a.type === 'training' || a.type === 'vacation') && a.id !== 'unavailable');
+  
 
-  // Group gate assignments by area
-  const gateAssignmentsByArea = Object.keys(GATE_AREAS).reduce((acc, areaCode) => {
-    acc[areaCode] = assignments.filter(a => a.area === areaCode);
-    return acc;
-  }, {} as Record<string, Assignment[]>);
+  
 
-  // Calculate total gates
-  const totalGates = Object.values(GATE_AREAS).reduce((total, area) => {
-    return total + area.gates.length + area.vipGates.length;
-  }, 0);
+  
+  
+
+  
+
+  
+
+  
 
   return <div className="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-slate-200 dark:from-slate-950 dark:via-gray-900 dark:to-slate-900">
       <div className="container mx-auto p-4 space-y-6">
