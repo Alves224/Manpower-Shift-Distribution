@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -279,7 +278,10 @@ const Index = () => {
   const unavailablePool = assignments.find(a => a.id === 'unavailable');
   const gateAssignments = assignments.filter(a => a.type === 'gate' && a.id !== 'unassigned');
   const patrolAssignments = assignments.filter(a => a.type === 'patrol');
-  const specialAssignments = assignments.filter(a => a.type === 'training' || a.type === 'vacation');
+  const specialAssignments = assignments.filter(a => 
+    (a.type === 'training' || a.type === 'vacation') && 
+    a.id !== 'unavailable'
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-all duration-500">
