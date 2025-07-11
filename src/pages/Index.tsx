@@ -167,77 +167,84 @@ const Index = () => {
   // Initialize assignments with categorized gates
   useEffect(() => {
     const initialAssignments: Assignment[] = [
-    // Available pool
-    {
-      id: 'unassigned',
-      name: 'Available Employees',
-      type: 'gate',
-      employees: [],
-      maxCapacity: 45
-    },
-    // Unavailable pool
-    {
-      id: 'unavailable',
-      name: 'Unavailable Personnel',
-      type: 'vacation',
-      employees: [],
-      maxCapacity: 20
-    },
-    // Create assignments for each area's gates
-    ...Object.entries(GATE_AREAS).flatMap(([areaCode, areaData]) => [
-    // Regular gates
-    ...areaData.gates.map(gateName => ({
-      id: `gate-${gateName.replace('G #', '').replace(' ', '')}`,
-      name: gateName,
-      type: 'gate' as const,
-      employees: [],
-      maxCapacity: 5,
-      weaponAssigned: false,
-      area: areaCode
-    })),
-    // VIP gates
-    ...areaData.vipGates.map((vipGate, index) => ({
-      id: `vip-${areaCode}-${index}`,
-      name: vipGate,
-      type: 'gate' as const,
-      employees: [],
-      maxCapacity: 5,
-      weaponAssigned: false,
-      area: areaCode
-    }))]), ...Array.from({
-      length: 8
-    }, (_, i) => ({
-      id: `patrol-${i + 1}`,
-      name: `Patrol ${i + 1}`,
-      type: 'patrol' as const,
-      employees: [],
-      maxCapacity: 1,
-      weaponAssigned: false
-    })), {
-      id: 'training',
-      name: 'Training',
-      type: 'training',
-      employees: [],
-      maxCapacity: 10
-    }, {
-      id: 'vacation',
-      name: 'Vacation',
-      type: 'vacation',
-      employees: [],
-      maxCapacity: 20
-    }, {
-      id: 'assignment',
-      name: 'Assignment',
-      type: 'training',
-      employees: [],
-      maxCapacity: 5
-    }, {
-      id: 'm-time',
-      name: 'M-Time',
-      type: 'training',
-      employees: [],
-      maxCapacity: 5
-    }]);
+      // Available pool
+      {
+        id: 'unassigned',
+        name: 'Available Employees',
+        type: 'gate',
+        employees: [],
+        maxCapacity: 45
+      },
+      // Unavailable pool
+      {
+        id: 'unavailable',
+        name: 'Unavailable Personnel',
+        type: 'vacation',
+        employees: [],
+        maxCapacity: 20
+      },
+      // Create assignments for each area's gates
+      ...Object.entries(GATE_AREAS).flatMap(([areaCode, areaData]) => [
+        // Regular gates
+        ...areaData.gates.map(gateName => ({
+          id: `gate-${gateName.replace('G #', '').replace(' ', '')}`,
+          name: gateName,
+          type: 'gate' as const,
+          employees: [],
+          maxCapacity: 5,
+          weaponAssigned: false,
+          area: areaCode
+        })),
+        // VIP gates
+        ...areaData.vipGates.map((vipGate, index) => ({
+          id: `vip-${areaCode}-${index}`,
+          name: vipGate,
+          type: 'gate' as const,
+          employees: [],
+          maxCapacity: 5,
+          weaponAssigned: false,
+          area: areaCode
+        }))
+      ]),
+      ...Array.from({
+        length: 8
+      }, (_, i) => ({
+        id: `patrol-${i + 1}`,
+        name: `Patrol ${i + 1}`,
+        type: 'patrol' as const,
+        employees: [],
+        maxCapacity: 1,
+        weaponAssigned: false
+      })),
+      {
+        id: 'training',
+        name: 'Training',
+        type: 'training',
+        employees: [],
+        maxCapacity: 10
+      },
+      {
+        id: 'vacation',
+        name: 'Vacation',
+        type: 'vacation',
+        employees: [],
+        maxCapacity: 20
+      },
+      {
+        id: 'assignment',
+        name: 'Assignment',
+        type: 'training',
+        employees: [],
+        maxCapacity: 5
+      },
+      {
+        id: 'm-time',
+        name: 'M-Time',
+        type: 'training',
+        employees: [],
+        maxCapacity: 5
+      }
+    ];
     setAssignments(initialAssignments);
   }, []);
 
