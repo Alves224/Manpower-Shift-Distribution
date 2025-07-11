@@ -23,7 +23,8 @@ import {
   Save,
   Clock,
   AlertCircle,
-  User
+  User,
+  FileText
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -231,26 +232,30 @@ const AreaNotesManager: React.FC<AreaNotesManagerProps> = ({
   };
 
   return (
-    <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/20">
-      <CardHeader className="pb-3">
+    <Card className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/20 shadow-lg">
+      <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-t-lg pb-3">
         <CardTitle className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
-            <StickyNote size={16} />
-            <span>{areaName} - Notes & Planning</span>
-            <Badge variant="secondary" className="text-xs">
+            <FileText size={18} />
+            <span className="font-semibold">{areaName} - Notes & Planning</span>
+            <Badge className="bg-white/20 text-white text-xs border-white/30">
               {notes.length}
             </Badge>
           </div>
           <Dialog open={showDialog} onOpenChange={setShowDialog}>
             <DialogTrigger asChild>
-              <Button size="sm" onClick={resetForm}>
-                <Plus size={14} className="mr-1" />
-                Add
+              <Button 
+                size="sm" 
+                onClick={resetForm}
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30 shadow-md"
+              >
+                <Plus size={16} className="mr-2" />
+                Add Note
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>
+                <DialogTitle className="text-lg">
                   {editingNote ? 'Edit' : 'Create'} {noteType.charAt(0).toUpperCase() + noteType.slice(1)}
                 </DialogTitle>
               </DialogHeader>
@@ -378,8 +383,8 @@ const AreaNotesManager: React.FC<AreaNotesManagerProps> = ({
                 )}
 
                 <div className="flex gap-2 pt-4">
-                  <Button onClick={saveNote} className="flex-1">
-                    <Save size={14} className="mr-1" />
+                  <Button onClick={saveNote} className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600">
+                    <Save size={14} className="mr-2" />
                     Save
                   </Button>
                   <Button variant="outline" onClick={() => setShowDialog(false)}>
@@ -392,9 +397,9 @@ const AreaNotesManager: React.FC<AreaNotesManagerProps> = ({
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="p-3">
+      <CardContent className="p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 mb-3">
+          <TabsList className="grid w-full grid-cols-4 mb-4">
             <TabsTrigger value="notes" className="text-xs">Notes</TabsTrigger>
             <TabsTrigger value="checklists" className="text-xs">Lists</TabsTrigger>
             <TabsTrigger value="events" className="text-xs">Events</TabsTrigger>
@@ -404,14 +409,16 @@ const AreaNotesManager: React.FC<AreaNotesManagerProps> = ({
           {['notes', 'checklists', 'events', 'todos'].map(tab => (
             <TabsContent key={tab} value={tab}>
               <ScrollArea className="max-h-64">
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {filterNotesByTab(tab).length === 0 ? (
-                    <div className="text-center text-muted-foreground py-4 text-sm">
-                      No {tab} yet
+                    <div className="text-center text-muted-foreground py-8 text-sm">
+                      <div className="mb-2">{getTypeIcon(tab === 'todos' ? 'todo' : tab === 'checklists' ? 'checklist' : tab === 'events' ? 'event' : 'note')}</div>
+                      <p>No {tab} yet</p>
+                      <p className="text-xs mt-1">Click "Add Note" to create your first {tab.slice(0, -1)}</p>
                     </div>
                   ) : (
                     filterNotesByTab(tab).map((note) => (
-                      <Card key={note.id} className="p-3 hover:shadow-sm transition-shadow">
+                      <Card key={note.id} className="p-3 hover:shadow-md transition-shadow border border-slate-200 dark:border-slate-700">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center gap-2">
                             {getTypeIcon(note.type)}
@@ -425,7 +432,7 @@ const AreaNotesManager: React.FC<AreaNotesManagerProps> = ({
                               size="sm"
                               variant="ghost"
                               onClick={() => editNote(note)}
-                              className="h-6 w-6 p-0"
+                              className="h-6 w-6 p-0 hover:bg-blue-100 text-blue-600"
                             >
                               <Edit3 size={12} />
                             </Button>
@@ -441,7 +448,7 @@ const AreaNotesManager: React.FC<AreaNotesManagerProps> = ({
                         </div>
                         
                         {note.content && (
-                          <p className="text-xs text-muted-foreground mb-2">{note.content}</p>
+                          <p className="text-xs text-muted-foreground mb-2 bg-slate-50 dark:bg-slate-800 p-2 rounded">{note.content}</p>
                         )}
                         
                         {note.items && note.items.length > 0 && (
@@ -465,14 +472,14 @@ const AreaNotesManager: React.FC<AreaNotesManagerProps> = ({
                           </div>
                         )}
                         
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-slate-200 dark:border-slate-700">
                           <div className="flex items-center gap-1">
                             <User size={10} />
                             <span>{note.createdBy}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             {note.dueDate && (
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1 text-orange-600">
                                 <Clock size={10} />
                                 <span>{format(note.dueDate, 'MMM d')}</span>
                               </div>
