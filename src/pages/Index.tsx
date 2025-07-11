@@ -537,8 +537,8 @@ const Index = () => {
             {/* Main Assignment Area */}
             <div className="lg:col-span-3 space-y-8">
               {/* Security Gates */}
-              <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/20">
-                <h3 className="text-3xl font-bold mb-6 flex items-center gap-3 text-blue-800 dark:text-blue-300">
+              <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/20">
+                <h3 className="text-3xl font-bold mb-8 flex items-center gap-3 text-blue-800 dark:text-blue-300">
                   <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-2 rounded-xl">
                     <Shield className="text-white" size={28} />
                   </div>
@@ -547,7 +547,7 @@ const Index = () => {
                     {gateAssignments.length} Gates
                   </Badge>
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {gateAssignments.map(assignment => (
                     <EnhancedGateCard
                       key={assignment.id}
@@ -561,8 +561,8 @@ const Index = () => {
               </div>
 
               {/* Vehicle Patrols */}
-              <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/20">
-                <h3 className="text-3xl font-bold mb-6 flex items-center gap-3 text-purple-800 dark:text-purple-300">
+              <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/20">
+                <h3 className="text-3xl font-bold mb-8 flex items-center gap-3 text-purple-800 dark:text-purple-300">
                   <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-2 rounded-xl">
                     <Car className="text-white" size={28} />
                   </div>
@@ -571,7 +571,7 @@ const Index = () => {
                     {patrolAssignments.length} Units
                   </Badge>
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {patrolAssignments.map(assignment => (
                     <EnhancedGateCard
                       key={assignment.id}
@@ -585,14 +585,14 @@ const Index = () => {
               </div>
 
               {/* Special Assignments */}
-              <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/20">
-                <h3 className="text-3xl font-bold mb-6 flex items-center gap-3 text-orange-800 dark:text-orange-300">
+              <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/20">
+                <h3 className="text-3xl font-bold mb-8 flex items-center gap-3 text-orange-800 dark:text-orange-300">
                   <div className="bg-gradient-to-r from-orange-600 to-red-600 p-2 rounded-xl">
                     <BarChart3 className="text-white" size={28} />
                   </div>
                   Special Assignments
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {specialAssignments.map(assignment => (
                     <EnhancedGateCard
                       key={assignment.id}
