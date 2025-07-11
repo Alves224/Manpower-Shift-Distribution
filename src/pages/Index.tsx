@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -651,15 +650,13 @@ const Index = () => {
                     </div>
                   </div>
                   
-                  {/* Area Notes Manager - Only visible to supervisors and coordinators */}
-                  {(supervisor || coordinator) && (
-                    <AreaNotesManager 
-                      areaCode={areaCode}
-                      areaName={areaData.name}
-                      currentUser={supervisor || coordinator}
-                      employees={currentShiftEmployees}
-                    />
-                  )}
+                  {/* Area Notes Manager - Now available to all employees */}
+                  <AreaNotesManager 
+                    areaCode={areaCode}
+                    areaName={areaData.name}
+                    currentUser={supervisor || coordinator || currentShiftEmployees[0]}
+                    employees={currentShiftEmployees}
+                  />
                 </div>)}
 
               {/* Special Assignments */}
