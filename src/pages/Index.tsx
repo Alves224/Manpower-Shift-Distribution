@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -169,13 +170,19 @@ const EXAMPLE_EMPLOYEES: EmployeeProfile[] = [
 const Index = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [currentShift, setCurrentShift] = useState('SHIFT 1');
-  const [employees, setEmployees] = useState<EmployeeProfile[]>(EXAMPLE_EMPLOYEES);
+  const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [showNotesManager, setShowNotesManager] = useState(false);
   const [showDescriptionManager, setShowDescriptionManager] = useState(false);
   const [supervisorAssignments, setSupervisorAssignments] = useState<Record<string, string | null>>({});
   const [coordinatorAssignments, setCoordinatorAssignments] = useState<Record<string, string | null>>({});
+
+  // Initialize employees with sample data
+  useEffect(() => {
+    console.log('Initializing employees with sample data...');
+    setEmployees(EXAMPLE_EMPLOYEES);
+  }, []);
 
   // Toggle dark mode
   useEffect(() => {
@@ -188,6 +195,7 @@ const Index = () => {
 
   // Initialize assignments with categorized gates
   useEffect(() => {
+    console.log('Initializing assignments...');
     const initialAssignments: Assignment[] = [
       // Available pool
       {
@@ -272,12 +280,17 @@ const Index = () => {
 
   // Initialize unassigned pool with current shift employees
   useEffect(() => {
-    const currentShiftEmployees = employees.filter(emp => emp.shift === currentShift);
-    setAssignments(prev => prev.map(assignment => 
-      assignment.id === 'unassigned' 
-        ? { ...assignment, employees: currentShiftEmployees }
-        : { ...assignment, employees: assignment.employees.filter(emp => emp.shift === currentShift) }
-    ));
+    if (employees.length > 0 && assignments.length > 0) {
+      console.log('Updating assignments with current shift employees...');
+      const currentShiftEmployees = employees.filter(emp => emp.shift === currentShift);
+      console.log(`Found ${currentShiftEmployees.length} employees for ${currentShift}`);
+      
+      setAssignments(prev => prev.map(assignment => 
+        assignment.id === 'unassigned' 
+          ? { ...assignment, employees: currentShiftEmployees }
+          : { ...assignment, employees: assignment.employees.filter(emp => emp.shift === currentShift) }
+      ));
+    }
   }, [currentShift, employees]);
 
   // Update unavailable personnel based on special assignments
@@ -299,6 +312,7 @@ const Index = () => {
   }, [assignments]);
 
   const addEmployee = (employee: EmployeeProfile) => {
+    console.log('Adding new employee:', employee.name);
     const newEmployee = { ...employee, id: `emp-${Date.now()}` };
     setEmployees(prev => [...prev, newEmployee]);
     toast.success(`${employee.name} added successfully!`);
@@ -306,6 +320,7 @@ const Index = () => {
   };
 
   const removeEmployee = (employeeId: string) => {
+    console.log('Removing employee:', employeeId);
     setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
     setAssignments(prev => prev.map(assignment => ({
       ...assignment,
@@ -336,6 +351,7 @@ const Index = () => {
   };
 
   const toggleWeapon = (assignmentId: string) => {
+    console.log('Toggling weapon for assignment:', assignmentId);
     setAssignments(prev => prev.map(assignment => 
       assignment.id === assignmentId 
         ? { ...assignment, weaponAssigned: !assignment.weaponAssigned }
@@ -346,6 +362,8 @@ const Index = () => {
 
   const onDragEnd = (result: any) => {
     const { destination, source, draggableId } = result;
+    
+    console.log('Drag end:', { destination, source, draggableId });
     
     if (!destination) return;
     if (destination.droppableId === source.droppableId && destination.index === source.index) {
@@ -453,6 +471,13 @@ const Index = () => {
     return total + area.gates.length + area.vipGates.length;
   }, 0);
 
+  console.log('Render state:', {
+    employeeCount: employees.length,
+    currentShiftEmployees: currentShiftEmployees.length,
+    unassignedCount: unassignedPool?.employees.length || 0,
+    assignmentsCount: assignments.length
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-slate-200 dark:from-slate-950 dark:via-gray-900 dark:to-slate-900">
       <div className="container mx-auto p-4 space-y-6">
@@ -473,7 +498,10 @@ const Index = () => {
             
             <div className="flex items-center gap-3">
               <Button 
-                onClick={() => setShowProfileForm(true)} 
+                onClick={() => {
+                  console.log('Add Employee button clicked');
+                  setShowProfileForm(true);
+                }} 
                 className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-md" 
                 size="sm"
               >
@@ -482,7 +510,10 @@ const Index = () => {
               </Button>
               
               <Button 
-                onClick={() => setShowNotesManager(true)} 
+                onClick={() => {
+                  console.log('Notes & Planning button clicked');
+                  setShowNotesManager(true);
+                }} 
                 className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md" 
                 size="sm"
               >
@@ -491,7 +522,10 @@ const Index = () => {
               </Button>
 
               <Button 
-                onClick={() => setShowDescriptionManager(true)} 
+                onClick={() => {
+                  console.log('Description Manager button clicked');
+                  setShowDescriptionManager(true);
+                }} 
                 className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-md" 
                 size="sm"
               >
@@ -501,7 +535,13 @@ const Index = () => {
               
               <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 p-2 rounded-lg">
                 <Sun className="h-4 w-4" />
-                <Switch checked={darkMode} onCheckedChange={setDarkMode} />
+                <Switch 
+                  checked={darkMode} 
+                  onCheckedChange={(checked) => {
+                    console.log('Dark mode toggled:', checked);
+                    setDarkMode(checked);
+                  }} 
+                />
                 <Moon className="h-4 w-4" />
               </div>
             </div>
@@ -614,7 +654,10 @@ const Index = () => {
                 <Button 
                   key={shift} 
                   variant={currentShift === shift ? "default" : "outline"}
-                  onClick={() => setCurrentShift(shift)}
+                  onClick={() => {
+                    console.log('Shift changed to:', shift);
+                    setCurrentShift(shift);
+                  }}
                   className={currentShift === shift 
                     ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-md' 
                     : 'border-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -689,6 +732,11 @@ const Index = () => {
                             : 'border-slate-300/50 dark:border-slate-600/50'
                         }`}
                       >
+                        {unassignedPool?.employees.length === 0 && (
+                          <div className="text-center text-slate-400 py-4">
+                            No available personnel
+                          </div>
+                        )}
                         {unassignedPool?.employees.map((employee, index) => (
                           <Draggable key={employee.id} draggableId={employee.id} index={index}>
                             {(provided, snapshot) => (
@@ -714,7 +762,11 @@ const Index = () => {
                                   <Button 
                                     size="sm" 
                                     variant="ghost" 
-                                    onClick={() => removeEmployee(employee.id)} 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      console.log('Delete employee clicked:', employee.id);
+                                      removeEmployee(employee.id);
+                                    }} 
                                     className="h-5 w-5 p-0 text-red-500 hover:bg-red-100"
                                   >
                                     <Trash2 size={10} />
@@ -744,6 +796,11 @@ const Index = () => {
                 </CardHeader>
                 <CardContent className="p-3">
                   <div className="min-h-16 max-h-32 overflow-y-auto p-2 rounded-lg border-2 border-dashed border-slate-300/50 bg-slate-50/50 dark:bg-slate-800/50">
+                    {unavailablePool?.employees.length === 0 && (
+                      <div className="text-center text-slate-400 py-2 text-xs">
+                        No unavailable personnel
+                      </div>
+                    )}
                     {unavailablePool?.employees.map(employee => (
                       <div key={employee.id} className="p-2 mb-1 bg-white/50 dark:bg-slate-700/50 rounded opacity-75">
                         <div className="flex items-center gap-2">
