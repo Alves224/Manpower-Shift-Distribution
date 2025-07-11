@@ -21,7 +21,44 @@ const EnhancedImageUpload: React.FC<EnhancedImageUploadProps> = ({
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const resizeImage = (file: File, maxWidth: number = 150, maxHeight: number = 150, quality: number = 0.8): Promise<string> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        // Calculate new dimensions while maintaining aspect ratio
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw and resize image
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Convert to base64 with compression
+        const resizedImageUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(resizedImageUrl);
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -38,22 +75,18 @@ const EnhancedImageUpload: React.FC<EnhancedImageUploadProps> = ({
     }
 
     setIsUploading(true);
-    const reader = new FileReader();
     
-    reader.onload = (event) => {
-      const imageUrl = event.target?.result as string;
-      setPreviewImage(imageUrl);
-      onImageChange(imageUrl);
+    try {
+      // Resize the image to a consistent smaller size
+      const resizedImageUrl = await resizeImage(file, 150, 150, 0.8);
+      setPreviewImage(resizedImageUrl);
+      onImageChange(resizedImageUrl);
       setIsUploading(false);
-      toast.success('Image uploaded successfully');
-    };
-
-    reader.onerror = () => {
+      toast.success('Image uploaded and resized successfully');
+    } catch (error) {
       setIsUploading(false);
-      toast.error('Failed to upload image');
-    };
-
-    reader.readAsDataURL(file);
+      toast.error('Failed to process image');
+    }
   };
 
   const handleRemoveImage = () => {
@@ -81,7 +114,7 @@ const EnhancedImageUpload: React.FC<EnhancedImageUploadProps> = ({
                 <img
                   src={displayImage}
                   alt="Profile preview"
-                  className="w-24 h-24 rounded-full object-cover border-4 border-purple-300 shadow-lg"
+                  className="w-20 h-20 rounded-full object-cover border-4 border-purple-300 shadow-lg"
                 />
                 <Button
                   size="sm"
@@ -99,7 +132,7 @@ const EnhancedImageUpload: React.FC<EnhancedImageUploadProps> = ({
                     Image Preview
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
-                    Image looks good! This will be used as the employee's profile picture.
+                    Image automatically resized to 150x150px for consistent display.
                   </div>
                 </div>
                 
@@ -116,8 +149,8 @@ const EnhancedImageUpload: React.FC<EnhancedImageUploadProps> = ({
             </div>
           ) : (
             <div className="text-center space-y-4">
-              <div className="w-24 h-24 mx-auto bg-gradient-to-br from-purple-100 to-pink-100 dark:from-slate-600 dark:to-slate-700 rounded-full border-4 border-dashed border-purple-300 dark:border-slate-500 flex items-center justify-center">
-                <Upload size={32} className="text-purple-400 dark:text-slate-400" />
+              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-purple-100 to-pink-100 dark:from-slate-600 dark:to-slate-700 rounded-full border-4 border-dashed border-purple-300 dark:border-slate-500 flex items-center justify-center">
+                <Upload size={24} className="text-purple-400 dark:text-slate-400" />
               </div>
               
               <div className="space-y-2">
@@ -127,13 +160,13 @@ const EnhancedImageUpload: React.FC<EnhancedImageUploadProps> = ({
                   disabled={isUploading}
                 >
                   <Upload size={20} className="mr-2" />
-                  {isUploading ? 'Uploading...' : 'Upload Profile Image'}
+                  {isUploading ? 'Processing...' : 'Upload Profile Image'}
                 </Button>
                 
                 <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
                   <div>Supported formats: JPG, PNG, GIF</div>
                   <div>Maximum size: 5MB</div>
-                  <div>Recommended: 400x400 pixels</div>
+                  <div>Auto-resized to: 150x150 pixels</div>
                 </div>
               </div>
             </div>
