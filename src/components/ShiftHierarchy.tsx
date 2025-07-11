@@ -10,7 +10,7 @@ interface HierarchyEmployee {
   name: string;
   badge: string;
   image?: string;
-  role: 'supervisor' | 'coordinator';
+  role: 'guard' | 'patrol' | 'supervisor' | 'coordinator';
 }
 
 interface ShiftHierarchyProps {
