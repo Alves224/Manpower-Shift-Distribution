@@ -3,27 +3,20 @@ import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Plus, Users, Shield, Car, Clock, UserPlus, Trash2, Moon, Sun, Zap } from 'lucide-react';
+import { Plus, Users, Shield, Car, Clock, UserPlus, Trash2, Moon, Sun, Settings } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface Employee {
-  id: string;
-  name: string;
-  badge: string;
-  role: 'guard' | 'patrol' | 'supervisor';
-  shift: string;
-  image?: string;
-}
+import EmployeeProfileForm, { EmployeeProfile } from '@/components/EmployeeProfileForm';
+import ShiftHierarchy from '@/components/ShiftHierarchy';
+import EnhancedGateCard from '@/components/EnhancedGateCard';
 
 interface Assignment {
   id: string;
   name: string;
   type: 'gate' | 'patrol' | 'training' | 'vacation';
-  employees: Employee[];
+  employees: EmployeeProfile[];
   maxCapacity: number;
   weaponAssigned?: boolean;
 }
@@ -44,33 +37,24 @@ const PLACEHOLDER_IMAGES = [
   'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
 ];
 
-// Example employees for testing with images
-const EXAMPLE_EMPLOYEES: Employee[] = [
-  { id: 'emp-1', name: 'John Smith', badge: '001', role: 'supervisor', shift: 'SHIFT 1', image: PLACEHOLDER_IMAGES[0] },
-  { id: 'emp-2', name: 'Sarah Johnson', badge: '002', role: 'guard', shift: 'SHIFT 1', image: PLACEHOLDER_IMAGES[1] },
-  { id: 'emp-3', name: 'Mike Wilson', badge: '003', role: 'patrol', shift: 'SHIFT 1', image: PLACEHOLDER_IMAGES[2] },
-  { id: 'emp-4', name: 'Lisa Brown', badge: '004', role: 'guard', shift: 'SHIFT 1', image: PLACEHOLDER_IMAGES[3] },
-  { id: 'emp-5', name: 'David Lee', badge: '005', role: 'patrol', shift: 'SHIFT 1', image: PLACEHOLDER_IMAGES[4] },
-  { id: 'emp-6', name: 'Maria Garcia', badge: '006', role: 'guard', shift: 'SHIFT 2', image: PLACEHOLDER_IMAGES[5] },
-  { id: 'emp-7', name: 'James Taylor', badge: '007', role: 'supervisor', shift: 'SHIFT 2', image: PLACEHOLDER_IMAGES[6] },
-  { id: 'emp-8', name: 'Anna Davis', badge: '008', role: 'patrol', shift: 'SHIFT 2', image: PLACEHOLDER_IMAGES[7] },
-  { id: 'emp-9', name: 'Robert Miller', badge: '009', role: 'guard', shift: 'SHIFT 3', image: PLACEHOLDER_IMAGES[0] },
-  { id: 'emp-10', name: 'Jennifer Anderson', badge: '010', role: 'patrol', shift: 'SHIFT 3', image: PLACEHOLDER_IMAGES[1] },
-  { id: 'emp-11', name: 'Michael Chen', badge: '011', role: 'supervisor', shift: 'SHIFT 3', image: PLACEHOLDER_IMAGES[2] },
-  { id: 'emp-12', name: 'Emily Rodriguez', badge: '012', role: 'guard', shift: 'SHIFT 3', image: PLACEHOLDER_IMAGES[3] },
-  { id: 'emp-13', name: 'Thomas White', badge: '013', role: 'patrol', shift: 'SHIFT 4', image: PLACEHOLDER_IMAGES[4] },
-  { id: 'emp-14', name: 'Jessica Martinez', badge: '014', role: 'guard', shift: 'SHIFT 4', image: PLACEHOLDER_IMAGES[5] },
-  { id: 'emp-15', name: 'Daniel Thompson', badge: '015', role: 'supervisor', shift: 'SHIFT 4', image: PLACEHOLDER_IMAGES[6] },
+// Example employees for testing with enhanced profiles
+const EXAMPLE_EMPLOYEES: EmployeeProfile[] = [
+  { id: 'emp-1', name: 'John Smith', age: 35, gradeCode: 'SG-1', badge: '001', role: 'supervisor', shift: 'SHIFT 1', image: PLACEHOLDER_IMAGES[0], weapons: ['MP5', 'Glock'] },
+  { id: 'emp-2', name: 'Sarah Johnson', age: 28, gradeCode: 'SG-2', badge: '002', role: 'coordinator', shift: 'SHIFT 1', image: PLACEHOLDER_IMAGES[1], weapons: ['Glock'] },
+  { id: 'emp-3', name: 'Mike Wilson', age: 32, gradeCode: 'SG-3', badge: '003', role: 'patrol', shift: 'SHIFT 1', image: PLACEHOLDER_IMAGES[2], weapons: ['MP5', 'AirTaser'] },
+  { id: 'emp-4', name: 'Lisa Brown', age: 26, gradeCode: 'SG-4', badge: '004', role: 'guard', shift: 'SHIFT 1', image: PLACEHOLDER_IMAGES[3], weapons: ['Glock'] },
+  { id: 'emp-5', name: 'David Lee', age: 40, gradeCode: 'SG-1', badge: '005', role: 'supervisor', shift: 'SHIFT 2', image: PLACEHOLDER_IMAGES[4], weapons: ['MP5', 'Glock'] },
+  { id: 'emp-6', name: 'Maria Garcia', age: 29, gradeCode: 'SG-2', badge: '006', role: 'coordinator', shift: 'SHIFT 2', image: PLACEHOLDER_IMAGES[5], weapons: ['Glock', 'AirTaser'] },
+  { id: 'emp-7', name: 'James Taylor', age: 33, gradeCode: 'SG-3', badge: '007', role: 'guard', shift: 'SHIFT 2', image: PLACEHOLDER_IMAGES[6], weapons: ['Glock'] },
+  { id: 'emp-8', name: 'Anna Davis', age: 27, gradeCode: 'SG-4', badge: '008', role: 'patrol', shift: 'SHIFT 2', image: PLACEHOLDER_IMAGES[7], weapons: ['MP5'] },
 ];
 
 const Index = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [currentShift, setCurrentShift] = useState('SHIFT 1');
-  const [employees, setEmployees] = useState<Employee[]>(EXAMPLE_EMPLOYEES);
+  const [employees, setEmployees] = useState<EmployeeProfile[]>(EXAMPLE_EMPLOYEES);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [newEmployeeName, setNewEmployeeName] = useState('');
-  const [newEmployeeBadge, setNewEmployeeBadge] = useState('');
-  const [selectedRole, setSelectedRole] = useState<'guard' | 'patrol' | 'supervisor'>('guard');
+  const [showProfileForm, setShowProfileForm] = useState(false);
 
   // Toggle dark mode
   useEffect(() => {
@@ -139,25 +123,9 @@ const Index = () => {
     );
   }, [currentShift, employees]);
 
-  const addEmployee = () => {
-    if (newEmployeeName.trim() && newEmployeeBadge.trim()) {
-      // Get a random placeholder image
-      const randomImage = PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
-      
-      const newEmployee: Employee = {
-        id: `emp-${Date.now()}`,
-        name: newEmployeeName.trim(),
-        badge: newEmployeeBadge.trim(),
-        role: selectedRole,
-        shift: currentShift,
-        image: randomImage
-      };
-      
-      setEmployees(prev => [...prev, newEmployee]);
-      setNewEmployeeName('');
-      setNewEmployeeBadge('');
-      toast.success(`${newEmployee.name} added to ${currentShift}`);
-    }
+  const addEmployee = (employee: EmployeeProfile) => {
+    setEmployees(prev => [...prev, employee]);
+    setShowProfileForm(false);
   };
 
   const removeEmployee = (employeeId: string) => {
@@ -231,7 +199,8 @@ const Index = () => {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'supervisor': return 'bg-red-500';
-      case 'patrol': return 'bg-blue-500';
+      case 'coordinator': return 'bg-blue-500';
+      case 'patrol': return 'bg-purple-500';
       default: return 'bg-green-500';
     }
   };
@@ -246,36 +215,58 @@ const Index = () => {
   };
 
   const currentShiftEmployees = employees.filter(emp => emp.shift === currentShift);
+  const supervisor = currentShiftEmployees.find(emp => emp.role === 'supervisor');
+  const coordinator = currentShiftEmployees.find(emp => emp.role === 'coordinator');
   const unassignedPool = assignments.find(a => a.id === 'unassigned');
   const gateAssignments = assignments.filter(a => a.type === 'gate' && a.id !== 'unassigned');
   const patrolAssignments = assignments.filter(a => a.type === 'patrol');
   const specialAssignments = assignments.filter(a => a.type === 'training' || a.type === 'vacation');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors">
       <div className="container mx-auto p-6">
-        {/* Header with Dark Mode Toggle */}
+        {/* Enhanced Header */}
         <div className="mb-8 flex justify-between items-start">
           <div>
-            <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-3">
-              <Shield className="text-blue-600 dark:text-blue-400" />
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2 flex items-center gap-3">
+              <Shield className="text-blue-600 dark:text-blue-400 bg-white dark:bg-slate-800 rounded-full p-2" size={48} />
               YSOD Security Dashboard
             </h1>
-            <p className="text-slate-600 dark:text-slate-400">Employee Assignment & Shift Management System</p>
+            <p className="text-slate-600 dark:text-slate-400 text-lg">Advanced Employee Assignment & Shift Management System</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Sun className="h-4 w-4 text-yellow-500" />
-            <Switch
-              checked={darkMode}
-              onCheckedChange={setDarkMode}
-              aria-label="Toggle dark mode"
-            />
-            <Moon className="h-4 w-4 text-blue-500" />
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={() => setShowProfileForm(!showProfileForm)}
+              className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+            >
+              <Settings size={16} />
+              {showProfileForm ? 'Hide Form' : 'Add Employee'}
+            </Button>
+            <div className="flex items-center gap-2">
+              <Sun className="h-4 w-4 text-yellow-500" />
+              <Switch
+                checked={darkMode}
+                onCheckedChange={setDarkMode}
+                aria-label="Toggle dark mode"
+              />
+              <Moon className="h-4 w-4 text-blue-500" />
+            </div>
           </div>
         </div>
 
+        {/* Employee Profile Form */}
+        {showProfileForm && (
+          <div className="mb-6">
+            <EmployeeProfileForm
+              currentShift={currentShift}
+              onAddEmployee={addEmployee}
+              onClose={() => setShowProfileForm(false)}
+            />
+          </div>
+        )}
+
         {/* Shift Selector */}
-        <div className="mb-6 flex gap-4 items-center">
+        <div className="mb-6 flex gap-4 items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md">
           <Clock className="text-slate-600 dark:text-slate-400" />
           {SHIFTS.map(shift => (
             <Button
@@ -287,64 +278,24 @@ const Index = () => {
               {shift}
             </Button>
           ))}
-          <Badge variant="secondary" className="ml-4">
-            {currentShiftEmployees.length} Employees
+          <Badge variant="secondary" className="ml-4 text-sm px-3 py-1">
+            {currentShiftEmployees.length} Total Employees
           </Badge>
         </div>
 
-        {/* Add Employee Form */}
-        <Card className="mb-6 dark:bg-slate-800 dark:border-slate-700">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 dark:text-slate-200">
-              <UserPlus size={20} />
-              Add New Employee to {currentShift}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4 items-end">
-              <div className="flex-1">
-                <label className="block text-sm font-medium mb-1 dark:text-slate-300">Employee Name</label>
-                <Input
-                  value={newEmployeeName}
-                  onChange={(e) => setNewEmployeeName(e.target.value)}
-                  placeholder="Enter employee name"
-                  className="dark:bg-slate-700 dark:border-slate-600"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium mb-1 dark:text-slate-300">Badge Number</label>
-                <Input
-                  value={newEmployeeBadge}
-                  onChange={(e) => setNewEmployeeBadge(e.target.value)}
-                  placeholder="Enter badge number"
-                  className="dark:bg-slate-700 dark:border-slate-600"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium mb-1 dark:text-slate-300">Role</label>
-                <select
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-200"
-                >
-                  <option value="guard">Security Guard</option>
-                  <option value="patrol">Vehicle Patrol</option>
-                  <option value="supervisor">Supervisor</option>
-                </select>
-              </div>
-              <Button onClick={addEmployee} className="px-6">
-                <Plus size={16} className="mr-2" />
-                Add
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Shift Hierarchy */}
+        <ShiftHierarchy
+          shift={currentShift}
+          supervisor={supervisor}
+          coordinator={coordinator}
+          darkMode={darkMode}
+        />
 
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Available Employees Pool */}
             <div className="lg:col-span-1">
-              <Card className="dark:bg-slate-800 dark:border-slate-700">
+              <Card className="dark:bg-slate-800 dark:border-slate-700 shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
                     <Users size={20} />
@@ -381,7 +332,7 @@ const Index = () => {
                                   </Avatar>
                                   <div className="flex-1 min-w-0">
                                     <div className="font-semibold text-sm dark:text-slate-200 truncate">{employee.name}</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">#{employee.badge}</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">#{employee.badge} | {employee.gradeCode}</div>
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <div className={`w-2 h-2 rounded-full ${getRoleColor(employee.role)}`}></div>
@@ -411,196 +362,54 @@ const Index = () => {
             <div className="lg:col-span-3">
               {/* Security Gates */}
               <div className="mb-6">
-                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 dark:text-slate-200">
+                <h3 className="text-2xl font-bold mb-4 flex items-center gap-2 dark:text-slate-200">
                   <Shield className="text-blue-600 dark:text-blue-400" />
                   Security Gates
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
                   {gateAssignments.map(assignment => (
-                    <Card key={assignment.id} className={`${getAssignmentColor(assignment.type)} transition-all hover:shadow-md`}>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-semibold text-center dark:text-slate-200 flex justify-between items-center">
-                          <span>{assignment.name}</span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => toggleWeapon(assignment.id)}
-                            className={`p-1 h-6 w-6 ${assignment.weaponAssigned ? 'text-orange-500' : 'text-gray-400'}`}
-                          >
-                            <Zap size={12} />
-                          </Button>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <Droppable droppableId={assignment.id}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.droppableProps}
-                              className={`min-h-20 p-1 rounded border transition-colors ${
-                                snapshot.isDraggingOver ? 'border-blue-400 bg-blue-50 dark:bg-blue-950' : 'border-gray-200 dark:border-gray-600'
-                              }`}
-                            >
-                              {assignment.employees.map((employee, index) => (
-                                <Draggable key={employee.id} draggableId={employee.id} index={index}>
-                                  {(provided, snapshot) => (
-                                    <div
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      {...provided.dragHandleProps}
-                                      className={`p-1 mb-1 bg-white dark:bg-slate-700 rounded text-xs border cursor-move transition-all hover:shadow-sm ${
-                                        snapshot.isDragging ? 'shadow-md' : ''
-                                      }`}
-                                    >
-                                      <div className="flex items-center gap-1">
-                                        <Avatar className="h-5 w-5">
-                                          <AvatarImage src={employee.image} alt={employee.name} />
-                                          <AvatarFallback className="text-[8px]">
-                                            {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="font-medium truncate dark:text-slate-200">{employee.name}</div>
-                                          <div className="text-gray-500 dark:text-gray-400">#{employee.badge}</div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </Draggable>
-                              ))}
-                              {provided.placeholder}
-                            </div>
-                          )}
-                        </Droppable>
-                      </CardContent>
-                    </Card>
+                    <EnhancedGateCard
+                      key={assignment.id}
+                      assignment={assignment}
+                      onToggleWeapon={toggleWeapon}
+                      getAssignmentColor={getAssignmentColor}
+                      getRoleColor={getRoleColor}
+                    />
                   ))}
                 </div>
               </div>
 
               {/* Vehicle Patrols */}
               <div className="mb-6">
-                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 dark:text-slate-200">
+                <h3 className="text-2xl font-bold mb-4 flex items-center gap-2 dark:text-slate-200">
                   <Car className="text-blue-600 dark:text-blue-400" />
                   Vehicle Patrols
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {patrolAssignments.map(assignment => (
-                    <Card key={assignment.id} className={`${getAssignmentColor(assignment.type)} transition-all hover:shadow-md`}>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-semibold text-center dark:text-slate-200 flex justify-between items-center">
-                          <span>{assignment.name}</span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => toggleWeapon(assignment.id)}
-                            className={`p-1 h-6 w-6 ${assignment.weaponAssigned ? 'text-orange-500' : 'text-gray-400'}`}
-                          >
-                            <Zap size={12} />
-                          </Button>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <Droppable droppableId={assignment.id}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.droppableProps}
-                              className={`min-h-24 p-2 rounded border transition-colors ${
-                                snapshot.isDraggingOver ? 'border-blue-400 bg-blue-50 dark:bg-blue-950' : 'border-gray-200 dark:border-gray-600'
-                              }`}
-                            >
-                              {assignment.employees.map((employee, index) => (
-                                <Draggable key={employee.id} draggableId={employee.id} index={index}>
-                                  {(provided, snapshot) => (
-                                    <div
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      {...provided.dragHandleProps}
-                                      className={`p-2 mb-1 bg-white dark:bg-slate-700 rounded text-xs border cursor-move transition-all hover:shadow-sm ${
-                                        snapshot.isDragging ? 'shadow-md' : ''
-                                      }`}
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <Avatar className="h-6 w-6">
-                                          <AvatarImage src={employee.image} alt={employee.name} />
-                                          <AvatarFallback className="text-[10px]">
-                                            {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="font-medium dark:text-slate-200 truncate">{employee.name}</div>
-                                          <div className="text-gray-500 dark:text-gray-400">#{employee.badge}</div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </Draggable>
-                              ))}
-                              {provided.placeholder}
-                            </div>
-                          )}
-                        </Droppable>
-                      </CardContent>
-                    </Card>
+                    <EnhancedGateCard
+                      key={assignment.id}
+                      assignment={assignment}
+                      onToggleWeapon={toggleWeapon}
+                      getAssignmentColor={getAssignmentColor}
+                      getRoleColor={getRoleColor}
+                    />
                   ))}
                 </div>
               </div>
 
               {/* Special Assignments */}
               <div>
-                <h3 className="text-xl font-semibold mb-4 dark:text-slate-200">Special Assignments</h3>
+                <h3 className="text-2xl font-bold mb-4 dark:text-slate-200">Special Assignments</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {specialAssignments.map(assignment => (
-                    <Card key={assignment.id} className={`${getAssignmentColor(assignment.type)} transition-all hover:shadow-md`}>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-semibold text-center dark:text-slate-200">
-                          {assignment.name}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <Droppable droppableId={assignment.id}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.droppableProps}
-                              className={`min-h-24 p-2 rounded border transition-colors ${
-                                snapshot.isDraggingOver ? 'border-orange-400 bg-orange-50 dark:bg-orange-950' : 'border-gray-200 dark:border-gray-600'
-                              }`}
-                            >
-                              {assignment.employees.map((employee, index) => (
-                                <Draggable key={employee.id} draggableId={employee.id} index={index}>
-                                  {(provided, snapshot) => (
-                                    <div
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      {...provided.dragHandleProps}
-                                      className={`p-2 mb-1 bg-white dark:bg-slate-700 rounded text-xs border cursor-move transition-all hover:shadow-sm ${
-                                        snapshot.isDragging ? 'shadow-md' : ''
-                                      }`}
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <Avatar className="h-6 w-6">
-                                          <AvatarImage src={employee.image} alt={employee.name} />
-                                          <AvatarFallback className="text-[10px]">
-                                            {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="font-medium dark:text-slate-200 truncate">{employee.name}</div>
-                                          <div className="text-gray-500 dark:text-gray-400">#{employee.badge}</div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </Draggable>
-                              ))}
-                              {provided.placeholder}
-                            </div>
-                          )}
-                        </Droppable>
-                      </CardContent>
-                    </Card>
+                    <EnhancedGateCard
+                      key={assignment.id}
+                      assignment={assignment}
+                      onToggleWeapon={toggleWeapon}
+                      getAssignmentColor={getAssignmentColor}
+                      getRoleColor={getRoleColor}
+                    />
                   ))}
                 </div>
               </div>

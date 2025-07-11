@@ -1,0 +1,135 @@
+
+import React from 'react';
+import { Droppable, Draggable } from 'react-beautiful-dnd';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Zap, Shield, Users, Crown } from 'lucide-react';
+import { EmployeeProfile } from './EmployeeProfileForm';
+
+interface EnhancedGateCardProps {
+  assignment: {
+    id: string;
+    name: string;
+    type: string;
+    employees: EmployeeProfile[];
+    maxCapacity: number;
+    weaponAssigned?: boolean;
+  };
+  onToggleWeapon: (assignmentId: string) => void;
+  getAssignmentColor: (type: string) => string;
+  getRoleColor: (role: string) => string;
+}
+
+const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
+  assignment,
+  onToggleWeapon,
+  getAssignmentColor,
+  getRoleColor
+}) => {
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'supervisor': return <Crown size={12} className="text-red-500" />;
+      case 'coordinator': return <Shield size={12} className="text-blue-500" />;
+      default: return <Shield size={12} className="text-green-500" />;
+    }
+  };
+
+  return (
+    <Card className={`${getAssignmentColor(assignment.type)} transition-all hover:shadow-lg border-2 hover:border-blue-300 dark:hover:border-blue-600`}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-bold text-center dark:text-slate-200 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Shield size={14} className="text-blue-600 dark:text-blue-400" />
+            <span>{assignment.name}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Badge variant="outline" className="text-xs">
+              {assignment.employees.length}/{assignment.maxCapacity}
+            </Badge>
+            {assignment.type !== 'training' && assignment.type !== 'vacation' && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onToggleWeapon(assignment.id)}
+                className={`p-1 h-6 w-6 ${assignment.weaponAssigned ? 'text-orange-500 bg-orange-100 dark:bg-orange-900' : 'text-gray-400 hover:text-orange-500'}`}
+                title={`Weapon ${assignment.weaponAssigned ? 'Assigned' : 'Not Assigned'}`}
+              >
+                <Zap size={12} />
+              </Button>
+            )}
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <Droppable droppableId={assignment.id}>
+          {(provided, snapshot) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className={`min-h-24 p-2 rounded-lg border-2 border-dashed transition-all ${
+                snapshot.isDraggingOver 
+                  ? 'border-blue-400 bg-blue-50 dark:bg-blue-950 shadow-inner' 
+                  : 'border-gray-300 dark:border-gray-600'
+              }`}
+            >
+              {assignment.employees.map((employee, index) => (
+                <Draggable key={employee.id} draggableId={employee.id} index={index}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      className={`p-2 mb-2 bg-white dark:bg-slate-700 rounded-lg text-xs border shadow-sm cursor-move transition-all hover:shadow-md ${
+                        snapshot.isDragging ? 'shadow-lg rotate-2 scale-105' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8 border-2 border-gray-200">
+                          <AvatarImage src={employee.image} alt={employee.name} />
+                          <AvatarFallback className="text-[10px] font-bold">
+                            {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className="font-semibold truncate dark:text-slate-200">{employee.name}</span>
+                            {getRoleIcon(employee.role)}
+                          </div>
+                          <div className="text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                            <span>#{employee.badge}</span>
+                            {employee.age && <span>Age: {employee.age}</span>}
+                            {employee.gradeCode && <Badge variant="outline" className="text-[8px] px-1 py-0">{employee.gradeCode}</Badge>}
+                          </div>
+                          {employee.weapons && employee.weapons.length > 0 && (
+                            <div className="flex gap-1 mt-1">
+                              {employee.weapons.map(weapon => (
+                                <Badge key={weapon} variant="secondary" className="text-[8px] px-1 py-0">
+                                  {weapon}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+              {assignment.employees.length === 0 && (
+                <div className="flex items-center justify-center h-16 text-gray-400 dark:text-gray-500">
+                  <Users size={20} />
+                  <span className="ml-2 text-sm">Empty</span>
+                </div>
+              )}
+            </div>
+          )}
+        </Droppable>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default EnhancedGateCard;
