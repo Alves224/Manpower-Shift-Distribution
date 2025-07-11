@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,9 +15,9 @@ interface WeaponImages {
 }
 
 const WEAPON_IMAGES: WeaponImages = {
-  MP5: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=150&h=150&fit=crop',
-  Glock: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=150&h=150&fit=crop',
-  AirTaser: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=150&h=150&fit=crop'
+  MP5: '/lovable-uploads/a77e4cce-32dd-4452-8a77-60284b5bfeba.png',
+  Glock: '/lovable-uploads/332f3c1f-d4cf-487f-b0a6-bb60d4b13299.png',
+  AirTaser: '/lovable-uploads/f33a5480-6810-4bdb-9202-949f44d8b836.png'
 };
 
 export interface EmployeeProfile {
@@ -114,79 +113,82 @@ const EmployeeProfileForm: React.FC<EmployeeProfileFormProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto dark:bg-slate-800 dark:border-slate-700">
-      <CardHeader>
+    <Card className="w-full max-w-2xl mx-auto bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 shadow-2xl border-0">
+      <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-lg">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 dark:text-slate-200">
-            <UserPlus size={20} />
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <UserPlus size={24} />
             Add Employee Profile - {currentShift}
           </CardTitle>
           {onClose && (
-            <Button variant="ghost" size="sm" onClick={onClose}>
+            <Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:bg-white/20">
               <X size={16} />
             </Button>
           )}
         </div>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <CardContent className="p-8">
+        <form onSubmit={handleSubmit} className="space-y-8">
           {/* Basic Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name" className="dark:text-slate-300">Full Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter full name"
-                className="dark:bg-slate-700 dark:border-slate-600"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="age" className="dark:text-slate-300">Age *</Label>
-              <Input
-                id="age"
-                type="number"
-                value={formData.age}
-                onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
-                placeholder="Enter age"
-                className="dark:bg-slate-700 dark:border-slate-600"
-                min="18"
-                max="65"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="gradeCode" className="dark:text-slate-300">Grade Code</Label>
-              <Input
-                id="gradeCode"
-                value={formData.gradeCode}
-                onChange={(e) => setFormData(prev => ({ ...prev, gradeCode: e.target.value }))}
-                placeholder="e.g., SG-1, SG-2"
-                className="dark:bg-slate-700 dark:border-slate-600"
-              />
-            </div>
-            <div>
-              <Label htmlFor="badge" className="dark:text-slate-300">Badge Number *</Label>
-              <Input
-                id="badge"
-                value={formData.badge}
-                onChange={(e) => setFormData(prev => ({ ...prev, badge: e.target.value }))}
-                placeholder="Enter badge number"
-                className="dark:bg-slate-700 dark:border-slate-600"
-                required
-              />
+          <div className="bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-700 dark:to-slate-800 p-6 rounded-xl border border-blue-200 dark:border-slate-600">
+            <h3 className="text-lg font-semibold mb-4 text-blue-800 dark:text-blue-300">Basic Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="name" className="dark:text-slate-300 font-semibold">Full Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter full name"
+                  className="dark:bg-slate-700 dark:border-slate-600 mt-2"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="age" className="dark:text-slate-300 font-semibold">Age *</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  value={formData.age}
+                  onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
+                  placeholder="Enter age"
+                  className="dark:bg-slate-700 dark:border-slate-600 mt-2"
+                  min="18"
+                  max="65"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="gradeCode" className="dark:text-slate-300 font-semibold">Grade Code</Label>
+                <Input
+                  id="gradeCode"
+                  value={formData.gradeCode}
+                  onChange={(e) => setFormData(prev => ({ ...prev, gradeCode: e.target.value }))}
+                  placeholder="e.g., SG-1, SG-2"
+                  className="dark:bg-slate-700 dark:border-slate-600 mt-2"
+                />
+              </div>
+              <div>
+                <Label htmlFor="badge" className="dark:text-slate-300 font-semibold">Badge Number *</Label>
+                <Input
+                  id="badge"
+                  value={formData.badge}
+                  onChange={(e) => setFormData(prev => ({ ...prev, badge: e.target.value }))}
+                  placeholder="Enter badge number"
+                  className="dark:bg-slate-700 dark:border-slate-600 mt-2"
+                  required
+                />
+              </div>
             </div>
           </div>
 
           {/* Role Selection */}
-          <div>
-            <Label className="dark:text-slate-300">Role *</Label>
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-slate-700 dark:to-slate-800 p-6 rounded-xl border border-green-200 dark:border-slate-600">
+            <Label className="dark:text-slate-300 font-semibold text-lg text-green-800 dark:text-green-300">Role Assignment *</Label>
             <select
               value={formData.role}
               onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as any }))}
-              className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-200"
+              className="w-full mt-3 px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 text-lg"
             >
               <option value="guard">Security Guard</option>
               <option value="patrol">Vehicle Patrol</option>
@@ -196,19 +198,19 @@ const EmployeeProfileForm: React.FC<EmployeeProfileFormProps> = ({
           </div>
 
           {/* Image Upload */}
-          <div>
-            <Label className="dark:text-slate-300">Profile Image</Label>
-            <div className="mt-2 flex items-center gap-4">
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-slate-700 dark:to-slate-800 p-6 rounded-xl border border-purple-200 dark:border-slate-600">
+            <Label className="dark:text-slate-300 font-semibold text-lg text-purple-800 dark:text-purple-300">Profile Image</Label>
+            <div className="mt-4 flex items-center gap-6">
               {formData.image && (
                 <img
                   src={formData.image}
                   alt="Preview"
-                  className="w-16 h-16 rounded-full object-cover border-2 border-gray-300"
+                  className="w-20 h-20 rounded-full object-cover border-4 border-purple-300 shadow-lg"
                 />
               )}
               <label className="cursor-pointer">
-                <div className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
-                  <Upload size={16} />
+                <div className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg">
+                  <Upload size={20} />
                   Upload Image
                 </div>
                 <input
@@ -222,31 +224,33 @@ const EmployeeProfileForm: React.FC<EmployeeProfileFormProps> = ({
           </div>
 
           {/* Weapons Assignment */}
-          <div>
-            <Label className="dark:text-slate-300 mb-3 block">Weapons Assignment</Label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-slate-700 dark:to-slate-800 p-6 rounded-xl border border-orange-200 dark:border-slate-600">
+            <Label className="dark:text-slate-300 mb-4 block font-semibold text-lg text-orange-800 dark:text-orange-300">Weapons Assignment</Label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {Object.entries(WEAPON_IMAGES).map(([weapon, image]) => (
-                <div key={weapon} className="flex items-center space-x-3 p-3 border rounded-lg dark:border-slate-600">
+                <div key={weapon} className="flex flex-col items-center space-y-3 p-4 border-2 border-orange-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 shadow-md hover:shadow-lg transition-all duration-300">
                   <img
                     src={image}
                     alt={weapon}
-                    className="w-12 h-12 object-cover rounded"
+                    className="w-20 h-20 object-contain rounded-lg bg-gray-50 dark:bg-slate-700 p-2"
                   />
-                  <div className="flex-1">
-                    <Label className="text-sm font-medium dark:text-slate-200">{weapon}</Label>
-                    <Checkbox
-                      checked={formData.weapons.includes(weapon)}
-                      onCheckedChange={() => handleWeaponToggle(weapon)}
-                      className="ml-2"
-                    />
+                  <div className="text-center">
+                    <Label className="text-sm font-bold dark:text-slate-200 text-gray-800">{weapon}</Label>
+                    <div className="mt-2">
+                      <Checkbox
+                        checked={formData.weapons.includes(weapon)}
+                        onCheckedChange={() => handleWeaponToggle(weapon)}
+                        className="scale-125"
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
             {formData.weapons.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 {formData.weapons.map(weapon => (
-                  <Badge key={weapon} variant="secondary">
+                  <Badge key={weapon} variant="secondary" className="bg-orange-100 text-orange-800 px-3 py-1">
                     {weapon}
                   </Badge>
                 ))}
@@ -254,7 +258,7 @@ const EmployeeProfileForm: React.FC<EmployeeProfileFormProps> = ({
             )}
           </div>
 
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full py-4 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg transition-all duration-300">
             Add Employee Profile
           </Button>
         </form>
