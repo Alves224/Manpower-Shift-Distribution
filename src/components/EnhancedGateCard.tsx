@@ -25,6 +25,13 @@ interface EnhancedGateCardProps {
   getRoleColor: (role: string) => string;
 }
 
+// Weapon images mapping
+const WEAPON_IMAGES: Record<string, string> = {
+  MP5: '/lovable-uploads/a77e4cce-32dd-4452-8a77-60284b5bfeba.png',
+  Glock: '/lovable-uploads/332f3c1f-d4cf-487f-b0a6-bb60d4b13299.png',
+  AirTaser: '/lovable-uploads/f33a5480-6810-4bdb-9202-949f44d8b836.png'
+};
+
 const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
   assignment,
   onToggleWeapon,
@@ -72,11 +79,11 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`flex items-center gap-2 p-1 mb-1 bg-white/90 dark:bg-slate-700/90 rounded border text-xs cursor-move transition-all hover:shadow-sm ${
+                      className={`flex items-center gap-2 p-2 mb-2 bg-white/90 dark:bg-slate-700/90 rounded border text-xs cursor-move transition-all hover:shadow-sm ${
                         snapshot.isDragging ? 'rotate-1 shadow-md scale-105' : ''
                       }`}
                     >
-                      <Avatar className="h-5 w-5 border">
+                      <Avatar className="h-6 w-6 border">
                         <AvatarImage src={employee.image} alt={employee.name} />
                         <AvatarFallback className="text-xs">
                           {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
@@ -85,6 +92,20 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{employee.name}</div>
                         <div className="text-xs text-gray-500">#{employee.badge}</div>
+                        {/* Display employee weapons */}
+                        {employee.weapons && employee.weapons.length > 0 && (
+                          <div className="flex items-center gap-1 mt-1">
+                            {employee.weapons.map((weapon, idx) => (
+                              <img
+                                key={idx}
+                                src={WEAPON_IMAGES[weapon]}
+                                alt={weapon}
+                                className="w-3 h-3 object-contain"
+                                title={weapon}
+                              />
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div className={`w-2 h-2 rounded-full ${getRoleColor(employee.role)}`} />
                     </div>
