@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -232,24 +231,28 @@ const AreaNotesManager: React.FC<AreaNotesManagerProps> = ({
   };
 
   return (
-    <Card className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/20 shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-t-lg pb-3">
-        <CardTitle className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2">
-            <FileText size={18} />
-            <span className="font-semibold">{areaName} - Notes & Planning</span>
-            <Badge className="bg-white/20 text-white text-xs border-white/30">
-              {notes.length}
+    <Card className="w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/20 shadow-lg">
+      <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-t-lg pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <FileText size={20} />
+            <div>
+              <CardTitle className="text-lg font-bold">{areaName} - Notes & Planning</CardTitle>
+              <p className="text-sm text-white/80 mt-1">Manage area notes, tasks, and events</p>
+            </div>
+            <Badge className="bg-white/20 text-white border-white/30">
+              {notes.length} items
             </Badge>
           </div>
+          
           <Dialog open={showDialog} onOpenChange={setShowDialog}>
             <DialogTrigger asChild>
               <Button 
-                size="sm" 
                 onClick={resetForm}
-                className="bg-white/20 hover:bg-white/30 text-white border-white/30 shadow-md"
+                size="lg"
+                className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 shadow-xl hover:shadow-2xl transition-all duration-200 font-semibold px-6 py-3"
               >
-                <Plus size={16} className="mr-2" />
+                <Plus size={18} className="mr-2" />
                 Add Note
               </Button>
             </DialogTrigger>
@@ -394,7 +397,7 @@ const AreaNotesManager: React.FC<AreaNotesManagerProps> = ({
               </div>
             </DialogContent>
           </Dialog>
-        </CardTitle>
+        </div>
       </CardHeader>
       
       <CardContent className="p-4">
