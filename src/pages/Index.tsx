@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Plus, Users, Shield, Car, Clock, UserPlus, Trash2, Moon, Sun, Settings, Zap, Activity, BarChart3 } from 'lucide-react';
+import { Plus, Users, Shield, Car, Clock, UserPlus, Trash2, Moon, Sun, Settings, Zap, Activity, BarChart3, UserMinus } from 'lucide-react';
 import { toast } from 'sonner';
 import EmployeeProfileForm, { EmployeeProfile } from '@/components/EmployeeProfileForm';
 import ShiftHierarchy from '@/components/ShiftHierarchy';
 import EnhancedGateCard from '@/components/EnhancedGateCard';
+import AssignmentManager from '@/components/AssignmentManager';
+import CommandStructureManager from '@/components/CommandStructureManager';
 
 interface Assignment {
   id: string;
@@ -54,6 +56,8 @@ const Index = () => {
   const [employees, setEmployees] = useState<EmployeeProfile[]>(EXAMPLE_EMPLOYEES);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [showProfileForm, setShowProfileForm] = useState(false);
+  const [supervisorAssignments, setSupervisorAssignments] = useState<Record<string, string | null>>({});
+  const [coordinatorAssignments, setCoordinatorAssignments] = useState<Record<string, string | null>>({});
 
   // Toggle dark mode
   useEffect(() => {
@@ -64,13 +68,15 @@ const Index = () => {
     }
   }, [darkMode]);
 
-  // Initialize assignments
+  // Initialize unavailable personnel assignment
   useEffect(() => {
     const initialAssignments: Assignment[] = [
-      // Unassigned pool with increased capacity for 45 employees
+      // Available pool
       { id: 'unassigned', name: 'Available Employees', type: 'gate', employees: [], maxCapacity: 45 },
       
-      // Security Gates with weapon tracking - Updated to maxCapacity: 5
+      // Unavailable pool
+      { id: 'unavailable', name: 'Unavailable Personnel', type: 'vacation', employees: [], maxCapacity: 20 },
+      
       ...GATE_NUMBERS.map(num => ({
         id: `gate-${num}`,
         name: `G #${num}`,
@@ -80,7 +86,6 @@ const Index = () => {
         weaponAssigned: false
       })),
       
-      // VIP Gates with weapon tracking - Updated to maxCapacity: 5
       ...VIP_GATES.map((gate, index) => ({
         id: `vip-${index}`,
         name: gate,
@@ -90,7 +95,6 @@ const Index = () => {
         weaponAssigned: false
       })),
       
-      // Vehicle Patrols with weapon tracking - Updated to maxCapacity: 1
       ...Array.from({ length: 8 }, (_, i) => ({
         id: `patrol-${i + 1}`,
         name: `Patrol ${i + 1}`,
@@ -100,7 +104,6 @@ const Index = () => {
         weaponAssigned: false
       })),
       
-      // Special assignments
       { id: 'training', name: 'Training', type: 'training', employees: [], maxCapacity: 10 },
       { id: 'vacation', name: 'Vacation', type: 'vacation', employees: [], maxCapacity: 20 },
       { id: 'assignment', name: 'Assignment', type: 'training', employees: [], maxCapacity: 5 },
@@ -213,10 +216,38 @@ const Index = () => {
     }
   };
 
+  const addAssignment = (newAssignment: Omit<Assignment, 'employees'>) => {
+    setAssignments(prev => [...prev, { ...newAssignment, employees: [] }]);
+  };
+
+  const deleteAssignment = (id: string) => {
+    setAssignments(prev => prev.filter(assignment => assignment.id !== id));
+  };
+
+  const assignSupervisor = (employeeId: string | null) => {
+    setSupervisorAssignments(prev => ({
+      ...prev,
+      [currentShift]: employeeId
+    }));
+  };
+
+  const assignCoordinator = (employeeId: string | null) => {
+    setCoordinatorAssignments(prev => ({
+      ...prev,
+      [currentShift]: employeeId
+    }));
+  };
+
   const currentShiftEmployees = employees.filter(emp => emp.shift === currentShift);
-  const supervisor = currentShiftEmployees.find(emp => emp.role === 'supervisor');
-  const coordinator = currentShiftEmployees.find(emp => emp.role === 'coordinator');
+  const supervisor = supervisorAssignments[currentShift] 
+    ? employees.find(emp => emp.id === supervisorAssignments[currentShift])
+    : currentShiftEmployees.find(emp => emp.role === 'supervisor');
+  const coordinator = coordinatorAssignments[currentShift]
+    ? employees.find(emp => emp.id === coordinatorAssignments[currentShift])
+    : currentShiftEmployees.find(emp => emp.role === 'coordinator');
+  
   const unassignedPool = assignments.find(a => a.id === 'unassigned');
+  const unavailablePool = assignments.find(a => a.id === 'unavailable');
   const gateAssignments = assignments.filter(a => a.type === 'gate' && a.id !== 'unassigned');
   const patrolAssignments = assignments.filter(a => a.type === 'patrol');
   const specialAssignments = assignments.filter(a => a.type === 'training' || a.type === 'vacation');
@@ -317,6 +348,23 @@ const Index = () => {
           </div>
         </div>
 
+        {/* Assignment Manager */}
+        <AssignmentManager
+          assignments={assignments}
+          onAddAssignment={addAssignment}
+          onDeleteAssignment={deleteAssignment}
+        />
+
+        {/* Command Structure Manager */}
+        <CommandStructureManager
+          shift={currentShift}
+          employees={employees}
+          supervisor={supervisor}
+          coordinator={coordinator}
+          onAssignSupervisor={assignSupervisor}
+          onAssignCoordinator={assignCoordinator}
+        />
+
         {/* Shift Hierarchy */}
         <ShiftHierarchy
           shift={currentShift}
@@ -327,8 +375,9 @@ const Index = () => {
 
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Enhanced Available Employees Pool */}
-            <div className="lg:col-span-1">
+            {/* Personnel Pools */}
+            <div className="lg:col-span-1 space-y-6">
+              {/* Available Employees Pool */}
               <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 shadow-2xl border-0">
                 <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-t-lg">
                   <CardTitle className="flex items-center gap-3 text-xl">
@@ -389,6 +438,72 @@ const Index = () => {
                                     >
                                       <Trash2 size={12} />
                                     </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </CardContent>
+              </Card>
+
+              {/* Unavailable Personnel Pool */}
+              <Card className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 shadow-2xl border-0">
+                <CardHeader className="bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-t-lg">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <UserMinus size={24} />
+                    Unavailable Personnel
+                    <Badge className="bg-white/20 text-white font-bold">
+                      {unavailablePool?.employees.length || 0}/20
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <Droppable droppableId="unavailable">
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`min-h-32 max-h-64 overflow-y-auto p-3 rounded-xl border-2 border-dashed transition-all duration-300 ${
+                          snapshot.isDraggingOver 
+                            ? 'border-red-400 bg-red-100 dark:bg-red-950 shadow-inner scale-105' 
+                            : 'border-gray-300 dark:border-gray-600'
+                        }`}
+                      >
+                        {unavailablePool?.employees.map((employee, index) => (
+                          <Draggable key={employee.id} draggableId={employee.id} index={index}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={`p-3 mb-3 bg-white dark:bg-slate-700 rounded-xl border shadow-md cursor-move transition-all duration-300 hover:shadow-lg ${
+                                  snapshot.isDragging ? 'rotate-2 shadow-2xl scale-105' : 'hover:scale-102'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-10 w-10 border-2 border-red-300">
+                                    <AvatarImage src={employee.image} alt={employee.name} />
+                                    <AvatarFallback className="text-xs font-bold bg-red-100">
+                                      {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-bold text-sm dark:text-slate-200 truncate">{employee.name}</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                                      <span>#{employee.badge}</span>
+                                      <span>|</span>
+                                      <span>{employee.gradeCode}</span>
+                                      <span>|</span>
+                                      <span>Age {employee.age}</span>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-3 h-3 rounded-full ${getRoleColor(employee.role)}`}></div>
                                   </div>
                                 </div>
                               </div>
