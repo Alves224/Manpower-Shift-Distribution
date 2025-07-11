@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -86,33 +87,33 @@ const Index = () => {
       // Unassigned pool with increased capacity for 45 employees
       { id: 'unassigned', name: 'Available Employees', type: 'gate', employees: [], maxCapacity: 45 },
       
-      // Security Gates with weapon tracking
+      // Security Gates with weapon tracking - Updated to maxCapacity: 5
       ...GATE_NUMBERS.map(num => ({
         id: `gate-${num}`,
         name: `G #${num}`,
         type: 'gate' as const,
         employees: [],
-        maxCapacity: 2,
+        maxCapacity: 5,
         weaponAssigned: false
       })),
       
-      // VIP Gates with weapon tracking
+      // VIP Gates with weapon tracking - Updated to maxCapacity: 5
       ...VIP_GATES.map((gate, index) => ({
         id: `vip-${index}`,
         name: gate,
         type: 'gate' as const,
         employees: [],
-        maxCapacity: 2,
+        maxCapacity: 5,
         weaponAssigned: false
       })),
       
-      // Vehicle Patrols with weapon tracking
+      // Vehicle Patrols with weapon tracking - Updated to maxCapacity: 1
       ...Array.from({ length: 8 }, (_, i) => ({
         id: `patrol-${i + 1}`,
         name: `Patrol ${i + 1}`,
         type: 'patrol' as const,
         employees: [],
-        maxCapacity: 2,
+        maxCapacity: 1,
         weaponAssigned: false
       })),
       
