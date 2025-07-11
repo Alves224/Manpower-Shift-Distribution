@@ -86,7 +86,7 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
                   : 'border-gray-300 dark:border-gray-600'
               }`}
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="flex flex-wrap gap-3">
                 {assignment.employees.map((employee, index) => (
                   <Draggable key={employee.id} draggableId={employee.id} index={index}>
                     {(provided, snapshot) => (
@@ -94,44 +94,44 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className={`p-4 bg-white dark:bg-slate-700 rounded-xl border shadow-lg cursor-move transition-all hover:shadow-xl ${
+                        className={`p-3 bg-white dark:bg-slate-700 rounded-xl border shadow-lg cursor-move transition-all hover:shadow-xl min-w-[280px] ${
                           snapshot.isDragging ? 'shadow-2xl rotate-2 scale-105' : ''
                         }`}
                       >
-                        <div className="flex flex-col items-center text-center space-y-3">
-                          <Avatar className="h-16 w-16 border-3 border-gray-200 shadow-md">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-14 w-14 border-2 border-gray-200 shadow-md flex-shrink-0">
                             <AvatarImage src={employee.image} alt={employee.name} className="object-cover" />
-                            <AvatarFallback className="text-lg font-bold bg-gradient-to-br from-blue-100 to-purple-100">
+                            <AvatarFallback className="text-sm font-bold bg-gradient-to-br from-blue-100 to-purple-100">
                               {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           
-                          <div className="w-full">
-                            <div className="flex items-center justify-center gap-2 mb-2">
-                              <span className="font-bold text-sm dark:text-slate-200">{employee.name}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-bold text-sm dark:text-slate-200 truncate">{employee.name}</span>
                               {getRoleIcon(employee.role)}
                             </div>
                             
-                            <div className="text-xs text-gray-500 dark:text-gray-400 flex flex-col items-center gap-1 mb-3">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2 mb-2">
                               <span className="font-semibold">#{employee.badge}</span>
                               {employee.age && <span>Age: {employee.age}</span>}
                               {employee.gradeCode && (
-                                <Badge variant="outline" className="text-[10px] px-2 py-0 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                <Badge variant="outline" className="text-[10px] px-1 py-0 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                                   {employee.gradeCode}
                                 </Badge>
                               )}
                             </div>
                             
                             {employee.weapons && employee.weapons.length > 0 && (
-                              <div className="space-y-2">
-                                <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Weapons:</div>
-                                <div className="flex flex-wrap justify-center gap-2">
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 mr-1">Weapons:</span>
+                                <div className="flex gap-1">
                                   {employee.weapons.map(weapon => (
-                                    <div key={weapon} className="flex flex-col items-center gap-1 bg-orange-50 dark:bg-orange-900/30 p-2 rounded-lg border border-orange-200 dark:border-orange-800">
+                                    <div key={weapon} className="flex items-center gap-1 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded border border-orange-200 dark:border-orange-800">
                                       <img
                                         src={WEAPON_IMAGES[weapon as keyof WeaponImages]}
                                         alt={weapon}
-                                        className="w-6 h-6 object-contain"
+                                        className="w-4 h-4 object-contain"
                                       />
                                       <span className="text-[9px] font-semibold text-orange-800 dark:text-orange-200">
                                         {weapon}
