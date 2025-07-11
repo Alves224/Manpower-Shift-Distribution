@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Plus, Users, Shield, Car, Clock, UserPlus, Trash2, Moon, Sun, Settings, Zap, Activity, BarChart3, UserMinus, MapPin } from 'lucide-react';
+import { Plus, Users, Shield, Car, Clock, UserPlus, Trash2, Moon, Sun, Settings, Zap, Activity, BarChart3, UserMinus, MapPin, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import EmployeeProfileForm, { EmployeeProfile } from '@/components/EmployeeProfileForm';
 import ShiftHierarchy from '@/components/ShiftHierarchy';
@@ -153,6 +153,7 @@ const Index = () => {
   const [employees, setEmployees] = useState<EmployeeProfile[]>(EXAMPLE_EMPLOYEES);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [showProfileForm, setShowProfileForm] = useState(false);
+  const [showNotesManager, setShowNotesManager] = useState(false);
   const [supervisorAssignments, setSupervisorAssignments] = useState<Record<string, string | null>>({});
   const [coordinatorAssignments, setCoordinatorAssignments] = useState<Record<string, string | null>>({});
 
@@ -467,6 +468,11 @@ const Index = () => {
                 Add Employee
               </Button>
               
+              <Button onClick={() => setShowNotesManager(!showNotesManager)} className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md" size="sm">
+                <FileText size={16} className="mr-2" />
+                Notes & Planning
+              </Button>
+              
               <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 p-2 rounded-lg">
                 <Sun className="h-4 w-4" />
                 <Switch checked={darkMode} onCheckedChange={setDarkMode} />
@@ -521,6 +527,36 @@ const Index = () => {
 
         {/* Employee Profile Form */}
         {showProfileForm && <EmployeeProfileForm currentShift={currentShift} onAddEmployee={addEmployee} onClose={() => setShowProfileForm(false)} />}
+
+        {/* Global Notes Manager */}
+        {showNotesManager && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    Global Notes & Planning Manager
+                  </h2>
+                  <Button onClick={() => setShowNotesManager(false)} variant="ghost" size="sm">
+                    ✕
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => (
+                    <AreaNotesManager 
+                      key={areaCode}
+                      areaCode={areaCode}
+                      areaName={areaData.name}
+                      currentUser={supervisor || coordinator || currentShiftEmployees[0]}
+                      employees={currentShiftEmployees}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Shift Selector */}
         <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/20">
