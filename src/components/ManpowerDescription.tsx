@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -176,9 +175,13 @@ const ManpowerDescription: React.FC<ManpowerDescriptionProps> = ({
     return content;
   };
 
-  const downloadAsPDF = (record: DescriptionRecord) => {
+  const createPDFBlob = (record: DescriptionRecord) => {
     const content = generatePDFContent(record);
-    const blob = new Blob([content], { type: 'text/plain' });
+    return new Blob([content], { type: 'text/plain;charset=utf-8' });
+  };
+
+  const downloadAsPDF = (record: DescriptionRecord) => {
+    const blob = createPDFBlob(record);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -188,7 +191,7 @@ const ManpowerDescription: React.FC<ManpowerDescriptionProps> = ({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success('Description downloaded as PDF');
+    toast.success('Description downloaded successfully');
   };
 
   const printDescription = (record: DescriptionRecord) => {
@@ -215,11 +218,54 @@ const ManpowerDescription: React.FC<ManpowerDescriptionProps> = ({
   const sendByEmail = (record: DescriptionRecord) => {
     const dateRangeStr = `${format(record.dateRange.start, 'MMMM d')} to ${format(record.dateRange.end, 'MMMM d, yyyy')}`;
     const subject = `Manpower Description List for ${dateRangeStr}`;
-    const body = generatePDFContent(record);
     
-    const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(mailtoLink);
-    toast.success('Email client opened with description');
+    // Enhanced email body with proper greeting
+    const emailBody = `Greetings All,
+
+Please find attached the YSOD ${record.shift} manpower description for the period ${dateRangeStr}.
+
+This document contains:
+- Personnel assignments by area (NGL, YRD, BUP, HUH, YNT)
+- Vehicle patrol assignments
+- Special assignments (training, vacation)
+- Supervisor and coordinator details
+
+${record.notes ? `Additional Notes: ${record.notes}` : ''}
+
+Please review the assignments and contact the supervisor or coordinator if you have any questions or concerns.
+
+Best regards,
+Security Operations Team
+
+---
+Generated on: ${format(new Date(), 'PPP p')}
+Shift: ${record.shift}
+${record.supervisor ? `Supervisor: ${record.supervisor.name} (Badge: ${record.supervisor.badge})` : ''}
+${record.coordinator ? `Coordinator: ${record.coordinator.name} (Badge: ${record.coordinator.badge})` : ''}`;
+
+    // Create the PDF file for attachment
+    const blob = createPDFBlob(record);
+    const url = URL.createObjectURL(blob);
+    
+    // Create a downloadable link for the attachment
+    const attachmentLink = document.createElement('a');
+    attachmentLink.href = url;
+    const filename = `YSOD_${record.shift}_Manpower_Description_${format(record.dateRange.start, 'MMM-d')}_to_${format(record.dateRange.end, 'MMM-d-yyyy')}.txt`;
+    attachmentLink.download = filename;
+    
+    // Download the file first (user can then attach it manually)
+    document.body.appendChild(attachmentLink);
+    attachmentLink.click();
+    document.body.removeChild(attachmentLink);
+    
+    // Open email client with the enhanced body
+    const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+    
+    setTimeout(() => {
+      window.open(mailtoLink);
+      URL.revokeObjectURL(url);
+      toast.success('Email client opened and PDF downloaded for attachment');
+    }, 500);
   };
 
   const saveCurrentDescription = () => {
@@ -414,7 +460,7 @@ const ManpowerDescription: React.FC<ManpowerDescriptionProps> = ({
                             onClick={() => downloadAsPDF(record)}
                           >
                             <Download size={14} className="mr-1" />
-                            PDF
+                            Download
                           </Button>
                           <Button
                             size="sm"
@@ -428,9 +474,10 @@ const ManpowerDescription: React.FC<ManpowerDescriptionProps> = ({
                             size="sm"
                             variant="outline"
                             onClick={() => sendByEmail(record)}
+                            className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
                           >
                             <Mail size={14} className="mr-1" />
-                            Email
+                            Email with Attachment
                           </Button>
                         </div>
                       </CardTitle>
