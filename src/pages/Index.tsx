@@ -440,7 +440,7 @@ const Index = () => {
               <div className="flex items-center gap-2">
                 <MapPin size={18} />
                 <div>
-                  <div className="text-xs opacity-90">Gate Areas</div>
+                  <div className="text-xs opacity-90">Areas</div>
                   <div className="text-lg font-bold">{Object.keys(GATE_AREAS).length}</div>
                 </div>
               </div>
