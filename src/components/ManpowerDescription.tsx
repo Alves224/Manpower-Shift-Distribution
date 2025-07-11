@@ -86,128 +86,95 @@ const ManpowerDistribution: React.FC<ManpowerDistributionProps> = ({
     setSavedDistributions(distributions);
   };
 
-  const generateExcelStyleContent = (record: DistributionRecord) => {
-    const dateStr = format(record.dateRange.start, 'MM-dd-yyyy');
+  const generatePDFContent = (record: DistributionRecord) => {
+    const dateRangeStr = `${format(record.dateRange.start, 'MMMM d')} to ${format(record.dateRange.end, 'MMMM d, yyyy')}`;
     
-    // Group assignments by area
-    const areaGroups = {
-      YNT: { name: 'YNT', assignments: [] as Assignment[] },
-      YNGL: { name: 'YNGL', assignments: [] as Assignment[] },
-      YR: { name: 'YR', assignments: [] as Assignment[] },
-      HUH: { name: 'HUH', assignments: [] as Assignment[] },
-      BUP: { name: 'BUP', assignments: [] as Assignment[] }
+    let content = `MANPOWER DISTRIBUTION LIST\n`;
+    content += `${dateRangeStr}\n`;
+    content += `Shift: ${record.shift}\n`;
+    content += `\n`;
+    
+    if (record.supervisor) {
+      content += `Supervisor: ${record.supervisor.name} (Badge: ${record.supervisor.badge})\n`;
+    }
+    if (record.coordinator) {
+      content += `Coordinator: ${record.coordinator.name} (Badge: ${record.coordinator.badge})\n`;
+    }
+    content += `\n`;
+
+    // Create table format for PDF
+    content += `${'ASSIGNMENT'.padEnd(25)} ${'NAME'.padEnd(25)} ${'BADGE'.padEnd(10)} ${'GRADE'.padEnd(8)} ${'AREA'.padEnd(10)}\n`;
+    content += `${'-'.repeat(80)}\n`;
+
+    // Group assignments by area for better organization
+    const gateAreas = {
+      NGL: { name: 'NGL Area', assignments: [] as Assignment[] },
+      YRD: { name: 'YRD Area', assignments: [] as Assignment[] },
+      BUP: { name: 'BUP Area', assignments: [] as Assignment[] },
+      HUH: { name: 'HUH Area', assignments: [] as Assignment[] },
+      YNT: { name: 'YNT Area', assignments: [] as Assignment[] }
     };
 
     const otherAssignments: Assignment[] = [];
 
     record.assignments.forEach(assignment => {
-      if (assignment.area && areaGroups[assignment.area as keyof typeof areaGroups]) {
-        areaGroups[assignment.area as keyof typeof areaGroups].assignments.push(assignment);
+      if (assignment.area && gateAreas[assignment.area as keyof typeof gateAreas]) {
+        gateAreas[assignment.area as keyof typeof gateAreas].assignments.push(assignment);
       } else {
         otherAssignments.push(assignment);
       }
     });
 
-    let content = `${dateStr} ${record.shift}.xlsx\n\n`;
-    content += `${''.padEnd(120, '=')}\n`;
-    content += `Daily Work Assignment${' '.repeat(50)}${format(record.dateRange.start, 'yyyy.MM.dd')} ${format(record.dateRange.start, 'EEEE')}\n`;
-    content += `${''.padEnd(120, '-')}\n`;
-    
-    // Special assignments section
-    content += `Vacation${' '.repeat(10)}|\n`;
-    content += `Return to work${' '.repeat(5)}|\n`;
-    content += `Training${' '.repeat(12)}|\n`;
-    content += `Return to work${' '.repeat(5)}|\n`;
-    content += `${''.padEnd(120, '-')}\n`;
-
-    // Header row
-    content += `${'Name of Posts'.padEnd(15)}| ${'M'.padEnd(3)}| ${'Zero'.padEnd(5)}| ${'DS'.padEnd(3)}| ${'A/T'.padEnd(4)}| ${'G'.padEnd(3)}| ${'MP-5'.padEnd(5)}| ${'Manpower Distribution'.padEnd(50)}|\n`;
-    content += `${''.padEnd(15)}| ${'H'.padEnd(3)}| ${'Base'.padEnd(5)}| ${' '.padEnd(3)}| ${' '.padEnd(4)}| ${' '.padEnd(3)}| ${' '.padEnd(5)}| ${' '.padEnd(50)}|\n`;
-
-    // SSI and SSC rows
-    content += `${'SSI'.padEnd(15)}| ${'24'.padEnd(3)}| ${'1'.padEnd(5)}| ${'V'.padEnd(3)}| ${'V'.padEnd(4)}| ${' '.padEnd(3)}| ${' '.padEnd(5)}| ${'مروق البلاغي'.padEnd(50)}|\n`;
-    content += `${'SSC'.padEnd(15)}| ${'24'.padEnd(3)}| ${'1'.padEnd(5)}| ${' '.padEnd(3)}| ${'V'.padEnd(4)}| ${' '.padEnd(3)}| ${' '.padEnd(5)}| ${'صالح المحمدي'.padEnd(50)}|\n`;
-    content += `${''.padEnd(120, '=')}\n`;
-
-    // Process each area
-    Object.entries(areaGroups).forEach(([areaCode, areaData]) => {
+    // Add gate areas to table
+    Object.entries(gateAreas).forEach(([areaCode, areaData]) => {
       if (areaData.assignments.length > 0) {
-        // Area header
-        content += `${areaCode.padEnd(120)}\n`;
-        content += `${''.padEnd(120, '-')}\n`;
-
         areaData.assignments.forEach(assignment => {
-          if (assignment.employees.length > 0) {
-            assignment.employees.forEach((emp, empIndex) => {
-              const postName = empIndex === 0 ? assignment.name : '';
-              const mh = '24';
-              const zeroBase = assignment.employees.length.toString();
-              const ds = empIndex === 0 ? '1' : '';
-              const at = 'V';
-              const g = 'V';
-              const mp5 = assignment.weaponAssigned ? '1' : '';
-              
-              content += `${postName.padEnd(15)}| ${mh.padEnd(3)}| ${zeroBase.padEnd(5)}| ${ds.padEnd(3)}| ${at.padEnd(4)}| ${g.padEnd(3)}| ${mp5.padEnd(5)}| ${emp.name.padEnd(25)} ${emp.badge.padEnd(10)} ${emp.gradeCode.padEnd(10)}|\n`;
-            });
-          } else {
-            // Empty assignment
-            content += `${assignment.name.padEnd(15)}| ${'24'.padEnd(3)}| ${'0'.padEnd(5)}| ${' '.padEnd(3)}| ${' '.padEnd(4)}| ${' '.padEnd(3)}| ${' '.padEnd(5)}| ${'No personnel assigned'.padEnd(50)}|\n`;
+          assignment.employees.forEach(emp => {
+            content += `${assignment.name.padEnd(25)} ${emp.name.padEnd(25)} ${emp.badge.padEnd(10)} ${emp.gradeCode.padEnd(8)} ${areaCode.padEnd(10)}\n`;
+          });
+          if (assignment.employees.length === 0) {
+            content += `${assignment.name.padEnd(25)} ${'No personnel assigned'.padEnd(25)} ${'-'.padEnd(10)} ${'-'.padEnd(8)} ${areaCode.padEnd(10)}\n`;
           }
         });
-        content += `${''.padEnd(120, '=')}\n`;
       }
     });
 
-    // Other assignments (patrol, training, etc.)
-    if (otherAssignments.length > 0) {
-      content += `OTHER ASSIGNMENTS\n`;
-      content += `${''.padEnd(120, '-')}\n`;
-      
-      otherAssignments.forEach(assignment => {
-        if (assignment.employees.length > 0) {
-          assignment.employees.forEach((emp, empIndex) => {
-            const postName = empIndex === 0 ? assignment.name : '';
-            const assignmentType = assignment.type.toUpperCase();
-            
-            content += `${postName.padEnd(15)}| ${'24'.padEnd(3)}| ${assignment.employees.length.toString().padEnd(5)}| ${' '.padEnd(3)}| ${assignmentType.padEnd(4)}| ${' '.padEnd(3)}| ${' '.padEnd(5)}| ${emp.name.padEnd(25)} ${emp.badge.padEnd(10)} ${emp.gradeCode.padEnd(10)}|\n`;
-          });
-        }
+    // Add other assignments (patrols, training, etc.)
+    otherAssignments.forEach(assignment => {
+      assignment.employees.forEach(emp => {
+        const assignmentType = assignment.type.toUpperCase();
+        content += `${assignment.name.padEnd(25)} ${emp.name.padEnd(25)} ${emp.badge.padEnd(10)} ${emp.gradeCode.padEnd(8)} ${assignmentType.padEnd(10)}\n`;
       });
-      content += `${''.padEnd(120, '=')}\n`;
-    }
+      if (assignment.employees.length === 0) {
+        const assignmentType = assignment.type.toUpperCase();
+        content += `${assignment.name.padEnd(25)} ${'No personnel assigned'.padEnd(25)} ${'-'.padEnd(10)} ${'-'.padEnd(8)} ${assignmentType.padEnd(10)}\n`;
+      }
+    });
 
-    // Footer section
-    content += `M-Time\n`;
-    content += `${'Name'.padEnd(15)}| ${'Back to work'.padEnd(15)}|\n`;
-    content += `${''.padEnd(120, '=')}\n`;
+    content += `${'-'.repeat(80)}\n`;
+    content += `\nTotal Personnel: ${record.assignments.reduce((total, assignment) => total + assignment.employees.length, 0)}\n`;
 
     if (record.notes) {
       content += `\nNotes:\n${record.notes}\n`;
     }
 
     content += `\nGenerated on: ${format(new Date(), 'PPP p')}\n`;
-    if (record.supervisor) {
-      content += `Supervisor: ${record.supervisor.name} (${record.supervisor.badge})\n`;
-    }
-    if (record.coordinator) {
-      content += `Coordinator: ${record.coordinator.name} (${record.coordinator.badge})\n`;
-    }
 
     return content;
   };
 
-  const createExcelBlob = (record: DistributionRecord) => {
-    const content = generateExcelStyleContent(record);
+  const createPDFBlob = (record: DistributionRecord) => {
+    const content = generatePDFContent(record);
     return new Blob([content], { type: 'text/plain;charset=utf-8' });
   };
 
-  const downloadAsExcel = (record: DistributionRecord) => {
-    const blob = createExcelBlob(record);
+  const downloadAsPDF = (record: DistributionRecord) => {
+    const blob = createPDFBlob(record);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const dateStr = format(record.dateRange.start, 'MM-dd-yyyy');
-    a.download = `${dateStr}_${record.shift}.txt`;
+    const dateRangeStr = `${format(record.dateRange.start, 'MMM-d')}_to_${format(record.dateRange.end, 'MMM-d-yyyy')}`;
+    a.download = `manpower_distribution_${dateRangeStr}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -216,25 +183,16 @@ const ManpowerDistribution: React.FC<ManpowerDistributionProps> = ({
   };
 
   const printDistribution = (record: DistributionRecord) => {
-    const content = generateExcelStyleContent(record);
+    const content = generatePDFContent(record);
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(`
         <html>
           <head>
-            <title>Manpower Distribution - ${format(record.dateRange.start, 'MM-dd-yyyy')}</title>
+            <title>Manpower Distribution</title>
             <style>
-              body { 
-                font-family: 'Courier New', monospace; 
-                white-space: pre-line; 
-                padding: 20px; 
-                font-size: 12px;
-                line-height: 1.2;
-              }
-              @media print {
-                body { margin: 0; padding: 10px; }
-                @page { margin: 0.5in; }
-              }
+              body { font-family: Arial, sans-serif; white-space: pre-line; padding: 20px; }
+              h1 { color: #333; }
             </style>
           </head>
           <body>${content}</body>
@@ -246,40 +204,39 @@ const ManpowerDistribution: React.FC<ManpowerDistributionProps> = ({
   };
 
   const sendByEmail = (record: DistributionRecord) => {
-    const dateStr = format(record.dateRange.start, 'MM-dd-yyyy');
-    const subject = `Manpower Distribution - ${dateStr} ${record.shift}`;
+    const dateRangeStr = `${format(record.dateRange.start, 'MMMM d')} to ${format(record.dateRange.end, 'MMMM d, yyyy')}`;
+    const subject = `YSOD ${record.shift} Manpower Distribution for ${dateRangeStr}`;
     
-    const emailBody = `Dear Team,
+    // Simplified email body as requested
+    const emailBody = `Greetings All,
 
-Please find attached the manpower distribution for ${format(record.dateRange.start, 'MMMM d, yyyy')} - ${record.shift} shift.
-
-Total Personnel Assigned: ${record.assignments.reduce((total, assignment) => total + assignment.employees.length, 0)}
-Active Posts: ${record.assignments.filter(a => a.employees.length > 0).length}
+Please find attached the YSOD ${record.shift} manpower distribution for the period ${dateRangeStr}.
 
 Best regards,
 Security Operations Team`;
 
-    // Create the file for attachment
-    const blob = createExcelBlob(record);
+    // Create the PDF file for attachment
+    const blob = createPDFBlob(record);
     const url = URL.createObjectURL(blob);
     
     // Create a downloadable link for the attachment
     const attachmentLink = document.createElement('a');
     attachmentLink.href = url;
-    attachmentLink.download = `${dateStr}_${record.shift}.txt`;
+    const filename = `YSOD_${record.shift}_Manpower_Distribution_${format(record.dateRange.start, 'MMM-d')}_to_${format(record.dateRange.end, 'MMM-d-yyyy')}.txt`;
+    attachmentLink.download = filename;
     
-    // Download the file first
+    // Download the file first (user can then attach it manually)
     document.body.appendChild(attachmentLink);
     attachmentLink.click();
     document.body.removeChild(attachmentLink);
     
-    // Open email client
+    // Open email client with the simplified body
     const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
     
     setTimeout(() => {
       window.open(mailtoLink);
       URL.revokeObjectURL(url);
-      toast.success('Email client opened and distribution file downloaded for attachment');
+      toast.success('Email client opened and PDF downloaded for attachment');
     }, 500);
   };
 
@@ -321,6 +278,7 @@ Security Operations Team`;
     setWeekRange(startOfWeek);
   };
 
+  // Helper function to render assignment table
   const renderAssignmentTable = (assignments: Assignment[]) => {
     const allEmployees: Array<{ assignment: string; employee: EmployeeProfile; area?: string }> = [];
     
@@ -528,7 +486,7 @@ Security Operations Team`;
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => downloadAsExcel(record)}
+                            onClick={() => downloadAsPDF(record)}
                           >
                             <Download size={14} className="mr-1" />
                             Download
@@ -548,7 +506,7 @@ Security Operations Team`;
                             className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
                           >
                             <Mail size={14} className="mr-1" />
-                            Email
+                            Email with Attachment
                           </Button>
                         </div>
                       </CardTitle>
