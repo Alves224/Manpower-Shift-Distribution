@@ -1,73 +1,121 @@
-# Welcome to your Lovable project
 
-## Project info
+# Security Control Center
 
-**URL**: https://lovable.dev/projects/cd27320b-ce5d-49a4-a31b-50db8ce16d8e
+A comprehensive web-based security management system for area-based personnel assignment and monitoring.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **Employee Management**: Add, view, and manage security personnel with detailed profiles
+- **Shift Management**: Support for 4 different shifts with automatic personnel filtering
+- **Area-Based Assignments**: Organized gate assignments across 5 different security areas (NGL, YRD, BUP, HUH, YNT)
+- **Drag & Drop Interface**: Intuitive drag-and-drop functionality for personnel assignments
+- **Command Structure**: Dedicated supervisor and coordinator assignment system
+- **Mobile Patrols**: Management of 8 mobile patrol units
+- **Special Assignments**: Handle training, vacation, and other special duty assignments
+- **Weapon Tracking**: Toggle weapon assignments for gates and patrols
+- **Dark/Light Theme**: User-selectable theme with persistent settings
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
 
-**Use Lovable**
+## File Structure
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/cd27320b-ce5d-49a4-a31b-50db8ce16d8e) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+security-control-center/
+├── index.html          # Main HTML structure
+├── styles.css          # Complete styling with responsive design
+├── script.js           # Full application logic and functionality
+└── README.md           # This documentation file
 ```
 
-**Edit a file directly in GitHub**
+## Installation
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Download all files to a folder on your computer
+2. Open `index.html` in a web browser
+3. The application will run locally without any server setup required
 
-**Use GitHub Codespaces**
+## Usage
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Adding Employees
+1. Click the "Add Employee" button in the header
+2. Fill in the employee details (name, age, grade code, badge, role, shift)
+3. Submit the form to add the employee to the system
 
-## What technologies are used for this project?
+### Managing Shifts
+- Use the shift selector buttons to switch between different shifts
+- Personnel assignments are automatically filtered by the selected shift
 
-This project is built with:
+### Assigning Personnel
+- Drag employees from the "Available Personnel" pool
+- Drop them onto specific gates, patrol units, or special assignments
+- The system automatically prevents over-capacity assignments
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Command Structure
+- Assign supervisors and coordinators for each shift
+- Delete personnel using the trash icon on employee cards
 
-## How can I deploy this project?
+### Weapon Management
+- Click the gun icon on gate/patrol cards to toggle weapon assignments
+- Visual indicators show which positions have weapons assigned
 
-Simply open [Lovable](https://lovable.dev/projects/cd27320b-ce5d-49a4-a31b-50db8ce16d8e) and click on Share -> Publish.
+### Theme Switching
+- Use the sun/moon toggle in the header to switch between light and dark themes
+- Theme preference is automatically saved in browser storage
 
-## Can I connect a custom domain to my Lovable project?
+## Browser Compatibility
 
-Yes, you can!
+- Chrome (recommended)
+- Firefox
+- Safari
+- Edge
+- Internet Explorer 11+
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Technical Details
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- **Pure HTML/CSS/JavaScript**: No external frameworks or dependencies required
+- **Local Storage**: Theme preferences are saved locally
+- **Responsive Grid**: CSS Grid and Flexbox for modern layouts
+- **Font Awesome Icons**: Icons loaded from CDN
+- **Drag & Drop API**: Native HTML5 drag and drop implementation
+
+## Security Areas
+
+### NGL Area
+- Regular Gates: G #1, G #2, G #3, G #21
+- VIP Gates: V/P #05, V/P #014
+
+### YRD Area  
+- Regular Gates: G #16, G #17
+- VIP Gates: V/P #07, V/P #011
+
+### BUP Area
+- Regular Gates: G #18
+- VIP Gates: V/P #03
+
+### HUH Area
+- Regular Gates: G #23, G #24
+- VIP Gates: V/P #022, V/P #023
+
+### YNT Area
+- Regular Gates: G #4, G #5, G #9, G #11
+- VIP Gates: V/P #06, V/P #09, V/P #010
+
+## Default Sample Data
+
+The system includes sample employees for demonstration:
+- John Smith (Supervisor, Shift 1)
+- Sarah Johnson (Coordinator, Shift 1)
+- Mike Wilson (Patrol, Shift 1)
+- Lisa Brown (Guard, Shift 1)
+- David Lee (Supervisor, Shift 2)
+- Maria Garcia (Coordinator, Shift 2)
+
+## Customization
+
+The system can be easily customized by modifying:
+- Gate areas and names in the `GATE_AREAS` configuration
+- Color schemes in the CSS file
+- Personnel roles and attributes in the JavaScript
+- Capacity limits for different assignment types
+
+## Support
+
+This is a standalone application that runs entirely in the browser. No server setup or external dependencies are required.
