@@ -91,7 +91,11 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{employee.name}</div>
-                        <div className="text-xs text-gray-500">#{employee.badge}</div>
+                        <div className="text-xs text-gray-500 flex items-center gap-2">
+                          <span>#{employee.badge}</span>
+                          <span>•</span>
+                          <span>{employee.age}y</span>
+                        </div>
                         {/* Display employee weapons */}
                         {employee.weapons && employee.weapons.length > 0 && (
                           <div className="flex items-center gap-1 mt-1">
@@ -100,7 +104,7 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
                                 key={idx}
                                 src={WEAPON_IMAGES[weapon]}
                                 alt={weapon}
-                                className="w-3 h-3 object-contain"
+                                className="w-4 h-4 object-contain"
                                 title={weapon}
                               />
                             ))}
