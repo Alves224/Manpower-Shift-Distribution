@@ -606,13 +606,13 @@ const Index = () => {
                 </div>
               ))}
 
-              {/* Vehicle Patrols */}
+              {/* Mobile Patrols */}
               <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-lg">
                     <Car className="text-white" size={20} />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Vehicle Patrols</h3>
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Mobile Patrols</h3>
                   <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs">
                     {patrolAssignments.length} Units
                   </Badge>
