@@ -47,7 +47,14 @@ const GATE_AREAS = {
     }
 };
 
-// Sample Data
+// Weapon Icons Mapping
+const WEAPON_ICONS = {
+    'MP5': 'fas fa-gun',
+    'Glock': 'fas fa-crosshairs',
+    'AirTaser': 'fas fa-bolt'
+};
+
+// Sample Data with weapons
 const SAMPLE_EMPLOYEES = [
     {
         id: 'emp-1',
@@ -161,7 +168,7 @@ function initializeAssignments() {
     // Initialize available personnel
     state.assignments.available = state.employees.filter(emp => emp.shift === state.currentShift);
     
-    // Initialize gates - Remove patrol units, only gates now
+    // Initialize gates
     Object.entries(GATE_AREAS).forEach(([areaCode, areaData]) => {
         [...areaData.gates, ...areaData.vipGates].forEach(gateName => {
             const gateId = `gate-${gateName.replace(/[^a-zA-Z0-9]/g, '')}`;
@@ -223,7 +230,12 @@ function setupEventListeners() {
 function handleAddEmployee(e) {
     e.preventDefault();
     
-    const formData = new FormData(e.target);
+    // Get selected weapons
+    const selectedWeapons = [];
+    document.querySelectorAll('.weapon-option input[type="checkbox"]:checked').forEach(checkbox => {
+        selectedWeapons.push(checkbox.value);
+    });
+    
     const employee = {
         id: generateId(),
         name: document.getElementById('employeeName').value,
@@ -232,7 +244,7 @@ function handleAddEmployee(e) {
         badge: document.getElementById('employeeBadge').value,
         role: document.getElementById('employeeRole').value,
         shift: document.getElementById('employeeShift').value,
-        weapons: ['Glock'] // Default weapon
+        weapons: selectedWeapons.length > 0 ? selectedWeapons : ['Glock'] // Default weapon if none selected
     };
     
     state.employees.push(employee);
@@ -396,6 +408,17 @@ function updateCommandStructure() {
 }
 
 function createCommandEmployeeHTML(employee) {
+    const weaponsHTML = employee.weapons && employee.weapons.length > 0 
+        ? `<div class="employee-weapons">
+             ${employee.weapons.map(weapon => 
+                 `<span class="employee-weapon">
+                    <i class="${WEAPON_ICONS[weapon] || 'fas fa-gun'}"></i>
+                    ${weapon}
+                  </span>`
+             ).join('')}
+           </div>`
+        : '';
+    
     return `
         <div class="employee-card">
             <div class="employee-avatar">
@@ -404,6 +427,7 @@ function createCommandEmployeeHTML(employee) {
             <div class="employee-info">
                 <div class="employee-name">${employee.name}</div>
                 <div class="employee-badge">#${employee.badge}</div>
+                ${weaponsHTML}
             </div>
             <button class="employee-delete" onclick="deleteEmployee('${employee.id}')">
                 <i class="fas fa-trash"></i>
@@ -467,6 +491,18 @@ function createEmployeeCard(employee, readonly = false) {
     card.draggable = !readonly;
     card.dataset.employeeId = employee.id;
     
+    // Create weapons display
+    const weaponsHTML = employee.weapons && employee.weapons.length > 0 
+        ? `<div class="employee-weapons">
+             ${employee.weapons.map(weapon => 
+                 `<span class="employee-weapon">
+                    <i class="${WEAPON_ICONS[weapon] || 'fas fa-gun'}"></i>
+                    ${weapon}
+                  </span>`
+             ).join('')}
+           </div>`
+        : '';
+    
     card.innerHTML = `
         <div class="employee-avatar">
             ${getInitials(employee.name)}
@@ -474,6 +510,7 @@ function createEmployeeCard(employee, readonly = false) {
         <div class="employee-info">
             <div class="employee-name">${employee.name}</div>
             <div class="employee-badge">#${employee.badge}</div>
+            ${weaponsHTML}
         </div>
         ${!readonly ? `
             <button class="employee-delete" onclick="deleteEmployee('${employee.id}')">
