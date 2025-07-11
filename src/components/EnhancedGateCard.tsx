@@ -95,6 +95,8 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
                           <span>#{employee.badge}</span>
                           <span>•</span>
                           <span>{employee.age}y</span>
+                          <span>•</span>
+                          <span>{employee.gradeCode}</span>
                         </div>
                         {/* Display employee weapons */}
                         {employee.weapons && employee.weapons.length > 0 && (
@@ -104,7 +106,7 @@ const EnhancedGateCard: React.FC<EnhancedGateCardProps> = ({
                                 key={idx}
                                 src={WEAPON_IMAGES[weapon]}
                                 alt={weapon}
-                                className="w-4 h-4 object-contain"
+                                className="w-6 h-6 object-contain"
                                 title={weapon}
                               />
                             ))}
