@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Plus, Users, Shield, Car, Clock, UserPlus, Trash2, Moon, Sun, Settings, Zap, Activity, BarChart3, UserMinus } from 'lucide-react';
+import { Plus, Users, Shield, Car, Clock, UserPlus, Trash2, Moon, Sun, Settings, Zap, Activity, BarChart3, UserMinus, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import EmployeeProfileForm, { EmployeeProfile } from '@/components/EmployeeProfileForm';
 import ShiftHierarchy from '@/components/ShiftHierarchy';
@@ -20,11 +20,44 @@ interface Assignment {
   employees: EmployeeProfile[];
   maxCapacity: number;
   weaponAssigned?: boolean;
+  area?: string;
 }
 
 const SHIFTS = ['SHIFT 1', 'SHIFT 2', 'SHIFT 3', 'SHIFT 4'];
-const GATE_NUMBERS = Array.from({ length: 24 }, (_, i) => i + 1);
-const VIP_GATES = ['V/P #014', 'V/P #05', 'V/P #09', 'V/P #06', 'V/P #011', 'V/P #07', 'V/P #03', 'V/P #010', 'V/P #21', 'V/P #22'];
+
+// Gate areas configuration
+const GATE_AREAS = {
+  NGL: {
+    name: 'NGL Area',
+    gates: ['G #1', 'G #2', 'G #3', 'G #21'],
+    vipGates: ['V/P #05', 'V/P #014'],
+    color: 'from-blue-500 to-cyan-500'
+  },
+  YRD: {
+    name: 'YRD Area', 
+    gates: ['G #16', 'G #17'],
+    vipGates: ['V/P #07', 'V/P #011'],
+    color: 'from-green-500 to-emerald-500'
+  },
+  BUP: {
+    name: 'BUP Area',
+    gates: ['G #18'],
+    vipGates: ['V/P #03'],
+    color: 'from-purple-500 to-pink-500'
+  },
+  HUH: {
+    name: 'HUH Area',
+    gates: ['G #23', 'G #24'],
+    vipGates: ['V/P #022', 'V/P #023'],
+    color: 'from-orange-500 to-red-500'
+  },
+  YNT: {
+    name: 'YNT Area',
+    gates: ['G #4', 'G #5', 'G #9', 'G #11'],
+    vipGates: ['V/P #06', 'V/P #09', 'V/P #010'],
+    color: 'from-indigo-500 to-purple-500'
+  }
+};
 
 // Placeholder images for employees
 const PLACEHOLDER_IMAGES = [
@@ -68,7 +101,7 @@ const Index = () => {
     }
   }, [darkMode]);
 
-  // Initialize unavailable personnel assignment
+  // Initialize assignments with categorized gates
   useEffect(() => {
     const initialAssignments: Assignment[] = [
       // Available pool
@@ -77,23 +110,29 @@ const Index = () => {
       // Unavailable pool
       { id: 'unavailable', name: 'Unavailable Personnel', type: 'vacation', employees: [], maxCapacity: 20 },
       
-      ...GATE_NUMBERS.map(num => ({
-        id: `gate-${num}`,
-        name: `G #${num}`,
-        type: 'gate' as const,
-        employees: [],
-        maxCapacity: 5,
-        weaponAssigned: false
-      })),
-      
-      ...VIP_GATES.map((gate, index) => ({
-        id: `vip-${index}`,
-        name: gate,
-        type: 'gate' as const,
-        employees: [],
-        maxCapacity: 5,
-        weaponAssigned: false
-      })),
+      // Create assignments for each area's gates
+      ...Object.entries(GATE_AREAS).flatMap(([areaCode, areaData]) => [
+        // Regular gates
+        ...areaData.gates.map(gateName => ({
+          id: `gate-${gateName.replace('G #', '').replace(' ', '')}`,
+          name: gateName,
+          type: 'gate' as const,
+          employees: [],
+          maxCapacity: 5,
+          weaponAssigned: false,
+          area: areaCode
+        })),
+        // VIP gates
+        ...areaData.vipGates.map((vipGate, index) => ({
+          id: `vip-${areaCode}-${index}`,
+          name: vipGate,
+          type: 'gate' as const,
+          employees: [],
+          maxCapacity: 5,
+          weaponAssigned: false,
+          area: areaCode
+        }))
+      ]),
       
       ...Array.from({ length: 8 }, (_, i) => ({
         id: `patrol-${i + 1}`,
@@ -276,88 +315,92 @@ const Index = () => {
   
   const unassignedPool = assignments.find(a => a.id === 'unassigned');
   const unavailablePool = assignments.find(a => a.id === 'unavailable');
-  const gateAssignments = assignments.filter(a => a.type === 'gate' && a.id !== 'unassigned');
   const patrolAssignments = assignments.filter(a => a.type === 'patrol');
   const specialAssignments = assignments.filter(a => 
     (a.type === 'training' || a.type === 'vacation') && 
     a.id !== 'unavailable'
   );
 
+  // Group gate assignments by area
+  const gateAssignmentsByArea = Object.keys(GATE_AREAS).reduce((acc, areaCode) => {
+    acc[areaCode] = assignments.filter(a => a.area === areaCode);
+    return acc;
+  }, {} as Record<string, Assignment[]>);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
-      <div className="container mx-auto p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-slate-200 dark:from-slate-950 dark:via-gray-900 dark:to-slate-900">
+      <div className="container mx-auto p-4 space-y-6">
         {/* Modern Header */}
-        <div className="mb-6">
-          <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50 dark:border-slate-700/50">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-4">
-                <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-3 rounded-xl shadow-lg">
-                  <Shield className="text-white" size={32} />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    Security Control Center
-                  </h1>
-                  <p className="text-slate-600 dark:text-slate-400">Real-time Assignment & Monitoring System</p>
-                </div>
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/20 dark:border-slate-700/20">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-4">
+              <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-3 rounded-xl shadow-lg">
+                <Shield className="text-white" size={28} />
               </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Security Control Center
+                </h1>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">Area-Based Assignment & Monitoring System</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => setShowProfileForm(!showProfileForm)}
+                className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-md"
+                size="sm"
+              >
+                <UserPlus size={16} className="mr-2" />
+                Add Employee
+              </Button>
               
-              <div className="flex items-center gap-3">
-                <Button
-                  onClick={() => setShowProfileForm(!showProfileForm)}
-                  className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-lg"
-                >
-                  <UserPlus size={18} className="mr-2" />
-                  Add Employee
-                </Button>
-                
-                <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 p-2 rounded-lg">
-                  <Sun className="h-4 w-4" />
-                  <Switch checked={darkMode} onCheckedChange={setDarkMode} />
-                  <Moon className="h-4 w-4" />
+              <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 p-2 rounded-lg">
+                <Sun className="h-4 w-4" />
+                <Switch checked={darkMode} onCheckedChange={setDarkMode} />
+                <Moon className="h-4 w-4" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Compact Stats Cards */}
+          <div className="grid grid-cols-4 gap-3">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-3 rounded-lg shadow-sm">
+              <div className="flex items-center gap-2">
+                <Users size={18} />
+                <div>
+                  <div className="text-xs opacity-90">Active Personnel</div>
+                  <div className="text-lg font-bold">{currentShiftEmployees.length}</div>
                 </div>
               </div>
             </div>
             
-            {/* Stats Cards */}
-            <div className="grid grid-cols-4 gap-4">
-              <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-4 rounded-xl shadow-md">
-                <div className="flex items-center gap-2">
-                  <Users size={20} />
-                  <div>
-                    <div className="text-sm opacity-90">Active Personnel</div>
-                    <div className="text-xl font-bold">{currentShiftEmployees.length}</div>
-                  </div>
+            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-3 rounded-lg shadow-sm">
+              <div className="flex items-center gap-2">
+                <MapPin size={18} />
+                <div>
+                  <div className="text-xs opacity-90">Gate Areas</div>
+                  <div className="text-lg font-bold">{Object.keys(GATE_AREAS).length}</div>
                 </div>
               </div>
-              
-              <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-4 rounded-xl shadow-md">
-                <div className="flex items-center gap-2">
-                  <Shield size={20} />
-                  <div>
-                    <div className="text-sm opacity-90">Security Gates</div>
-                    <div className="text-xl font-bold">{gateAssignments.length}</div>
-                  </div>
+            </div>
+            
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-lg shadow-sm">
+              <div className="flex items-center gap-2">
+                <Car size={18} />
+                <div>
+                  <div className="text-xs opacity-90">Patrol Units</div>
+                  <div className="text-lg font-bold">{patrolAssignments.length}</div>
                 </div>
               </div>
-              
-              <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-xl shadow-md">
-                <div className="flex items-center gap-2">
-                  <Car size={20} />
-                  <div>
-                    <div className="text-sm opacity-90">Patrol Units</div>
-                    <div className="text-xl font-bold">{patrolAssignments.length}</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-4 rounded-xl shadow-md">
-                <div className="flex items-center gap-2">
-                  <Activity size={20} />
-                  <div>
-                    <div className="text-sm opacity-90">Current Shift</div>
-                    <div className="text-xl font-bold">{currentShift.replace('SHIFT ', '')}</div>
-                  </div>
+            </div>
+            
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-3 rounded-lg shadow-sm">
+              <div className="flex items-center gap-2">
+                <Activity size={18} />
+                <div>
+                  <div className="text-xs opacity-90">Current Shift</div>
+                  <div className="text-lg font-bold">{currentShift.replace('SHIFT ', '')}</div>
                 </div>
               </div>
             </div>
@@ -366,41 +409,38 @@ const Index = () => {
 
         {/* Employee Profile Form */}
         {showProfileForm && (
-          <div className="mb-6">
-            <EmployeeProfileForm
-              currentShift={currentShift}
-              onAddEmployee={addEmployee}
-              onClose={() => setShowProfileForm(false)}
-            />
-          </div>
+          <EmployeeProfileForm
+            currentShift={currentShift}
+            onAddEmployee={addEmployee}
+            onClose={() => setShowProfileForm(false)}
+          />
         )}
 
         {/* Shift Selector */}
-        <div className="mb-6">
-          <Card className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/50 dark:border-slate-700/50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-center gap-4">
-                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <Clock size={20} />
-                  <span className="font-medium">Active Shift:</span>
-                </div>
-                {SHIFTS.map(shift => (
-                  <Button
-                    key={shift}
-                    variant={currentShift === shift ? "default" : "outline"}
-                    onClick={() => setCurrentShift(shift)}
-                    className={currentShift === shift 
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg' 
-                      : 'border-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }
-                  >
-                    {shift}
-                  </Button>
-                ))}
+        <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                <Clock size={18} />
+                <span className="font-medium">Active Shift:</span>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              {SHIFTS.map(shift => (
+                <Button
+                  key={shift}
+                  variant={currentShift === shift ? "default" : "outline"}
+                  onClick={() => setCurrentShift(shift)}
+                  className={currentShift === shift 
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-md' 
+                    : 'border-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }
+                  size="sm"
+                >
+                  {shift}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Assignment Manager */}
         <AssignmentManager
@@ -428,16 +468,16 @@ const Index = () => {
         />
 
         <DragDropContext onDragEnd={onDragEnd}>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             {/* Personnel Pools */}
             <div className="lg:col-span-1 space-y-4">
               {/* Available Employees Pool */}
-              <Card className="bg-gradient-to-br from-emerald-50/80 to-green-50/80 dark:from-slate-800/80 dark:to-slate-900/80 backdrop-blur-xl border border-emerald-200/50 dark:border-slate-700/50 shadow-xl">
-                <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-t-lg p-4">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Users size={20} />
+              <Card className="bg-gradient-to-br from-emerald-50/90 to-green-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-emerald-200/50 dark:border-slate-700/50 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-t-lg p-3">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <Users size={16} />
                     Available Personnel
-                    <Badge className="bg-white/20 text-white">
+                    <Badge className="bg-white/20 text-white text-xs">
                       {unassignedPool?.employees.length || 0}
                     </Badge>
                   </CardTitle>
@@ -448,7 +488,7 @@ const Index = () => {
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className={`min-h-32 max-h-80 overflow-y-auto p-2 rounded-xl border-2 border-dashed transition-all ${
+                        className={`min-h-24 max-h-64 overflow-y-auto p-2 rounded-lg border-2 border-dashed transition-all ${
                           snapshot.isDraggingOver 
                             ? 'border-emerald-400 bg-emerald-100/50 dark:bg-emerald-950/50' 
                             : 'border-slate-300/50 dark:border-slate-600/50'
@@ -461,32 +501,28 @@ const Index = () => {
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className={`p-3 mb-2 bg-white/80 dark:bg-slate-700/80 rounded-lg border border-white/50 shadow-md cursor-move transition-all hover:shadow-lg backdrop-blur-sm ${
-                                  snapshot.isDragging ? 'rotate-1 shadow-xl scale-105' : ''
+                                className={`p-2 mb-2 bg-white/90 dark:bg-slate-700/90 rounded-lg border shadow-sm cursor-move transition-all hover:shadow-md ${
+                                  snapshot.isDragging ? 'rotate-1 shadow-lg scale-105' : ''
                                 }`}
                               >
                                 <div className="flex items-center gap-2">
-                                  <Avatar className="h-8 w-8 border border-emerald-300">
+                                  <Avatar className="h-6 w-6 border">
                                     <AvatarImage src={employee.image} alt={employee.name} />
-                                    <AvatarFallback className="text-xs bg-emerald-100">
+                                    <AvatarFallback className="text-xs">
                                       {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                                     </AvatarFallback>
                                   </Avatar>
                                   <div className="flex-1 min-w-0">
-                                    <div className="font-medium text-sm truncate">{employee.name}</div>
-                                    <div className="text-xs text-slate-500 flex gap-1">
-                                      <span>#{employee.badge}</span>
-                                      <span>•</span>
-                                      <span>{employee.gradeCode}</span>
-                                    </div>
+                                    <div className="font-medium text-xs truncate">{employee.name}</div>
+                                    <div className="text-xs text-slate-500">#{employee.badge}</div>
                                   </div>
                                   <Button
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => removeEmployee(employee.id)}
-                                    className="h-6 w-6 p-0 text-red-500 hover:bg-red-100"
+                                    className="h-5 w-5 p-0 text-red-500 hover:bg-red-100"
                                   >
-                                    <Trash2 size={12} />
+                                    <Trash2 size={10} />
                                   </Button>
                                 </div>
                               </div>
@@ -501,24 +537,24 @@ const Index = () => {
               </Card>
 
               {/* Unavailable Personnel Pool */}
-              <Card className="bg-gradient-to-br from-red-50/80 to-orange-50/80 dark:from-slate-800/80 dark:to-slate-900/80 backdrop-blur-xl border border-red-200/50 dark:border-slate-700/50 shadow-xl">
-                <CardHeader className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-t-lg p-4">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <UserMinus size={20} />
+              <Card className="bg-gradient-to-br from-red-50/90 to-orange-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-red-200/50 dark:border-slate-700/50 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-t-lg p-3">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <UserMinus size={16} />
                     Unavailable
-                    <Badge className="bg-white/20 text-white">
+                    <Badge className="bg-white/20 text-white text-xs">
                       {unavailablePool?.employees.length || 0}
                     </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3">
-                  <div className="min-h-24 max-h-48 overflow-y-auto p-2 rounded-xl border-2 border-dashed border-slate-300/50 bg-slate-50/50 dark:bg-slate-800/50">
+                  <div className="min-h-16 max-h-32 overflow-y-auto p-2 rounded-lg border-2 border-dashed border-slate-300/50 bg-slate-50/50 dark:bg-slate-800/50">
                     {unavailablePool?.employees.map((employee) => (
-                      <div key={employee.id} className="p-2 mb-2 bg-white/50 dark:bg-slate-700/50 rounded-lg opacity-75">
+                      <div key={employee.id} className="p-2 mb-1 bg-white/50 dark:bg-slate-700/50 rounded opacity-75">
                         <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
+                          <Avatar className="h-5 w-5">
                             <AvatarImage src={employee.image} alt={employee.name} />
-                            <AvatarFallback className="text-xs bg-red-100">
+                            <AvatarFallback className="text-xs">
                               {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
@@ -534,43 +570,45 @@ const Index = () => {
             </div>
 
             {/* Main Assignment Area */}
-            <div className="lg:col-span-3 space-y-6">
-              {/* Security Gates */}
-              <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-6 rounded-2xl shadow-xl border border-white/50 dark:border-slate-700/50">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-2 rounded-lg">
-                    <Shield className="text-white" size={24} />
+            <div className="lg:col-span-3 space-y-4">
+              {/* Security Gates by Area */}
+              {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => (
+                <div key={areaCode} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`bg-gradient-to-r ${areaData.color} p-2 rounded-lg`}>
+                      <MapPin className="text-white" size={20} />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{areaData.name}</h3>
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                      {gateAssignmentsByArea[areaCode]?.length || 0} Gates
+                    </Badge>
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Security Gates</h3>
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                    {gateAssignments.length} Gates
-                  </Badge>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {gateAssignmentsByArea[areaCode]?.map(assignment => (
+                      <EnhancedGateCard
+                        key={assignment.id}
+                        assignment={assignment}
+                        onToggleWeapon={toggleWeapon}
+                        getAssignmentColor={getAssignmentColor}
+                        getRoleColor={getRoleColor}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {gateAssignments.map(assignment => (
-                    <EnhancedGateCard
-                      key={assignment.id}
-                      assignment={assignment}
-                      onToggleWeapon={toggleWeapon}
-                      getAssignmentColor={getAssignmentColor}
-                      getRoleColor={getRoleColor}
-                    />
-                  ))}
-                </div>
-              </div>
+              ))}
 
               {/* Vehicle Patrols */}
-              <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-6 rounded-2xl shadow-xl border border-white/50 dark:border-slate-700/50">
-                <div className="flex items-center gap-3 mb-6">
+              <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
+                <div className="flex items-center gap-3 mb-4">
                   <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-lg">
-                    <Car className="text-white" size={24} />
+                    <Car className="text-white" size={20} />
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Vehicle Patrols</h3>
-                  <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Vehicle Patrols</h3>
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs">
                     {patrolAssignments.length} Units
                   </Badge>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {patrolAssignments.map(assignment => (
                     <EnhancedGateCard
                       key={assignment.id}
@@ -584,14 +622,14 @@ const Index = () => {
               </div>
 
               {/* Special Assignments */}
-              <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-6 rounded-2xl shadow-xl border border-white/50 dark:border-slate-700/50">
-                <div className="flex items-center gap-3 mb-6">
+              <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
+                <div className="flex items-center gap-3 mb-4">
                   <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
-                    <BarChart3 className="text-white" size={24} />
+                    <BarChart3 className="text-white" size={20} />
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Special Assignments</h3>
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Special Assignments</h3>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {specialAssignments.map(assignment => (
                     <EnhancedGateCard
                       key={assignment.id}
