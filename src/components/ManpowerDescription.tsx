@@ -25,7 +25,7 @@ interface Assignment {
   area?: string;
 }
 
-interface DescriptionRecord {
+interface DistributionRecord {
   id: string;
   dateRange: {
     start: Date;
@@ -39,14 +39,14 @@ interface DescriptionRecord {
   createdAt: Date;
 }
 
-interface ManpowerDescriptionProps {
+interface ManpowerDistributionProps {
   currentShift: string;
   assignments: Assignment[];
   supervisor?: EmployeeProfile;
   coordinator?: EmployeeProfile;
 }
 
-const ManpowerDescription: React.FC<ManpowerDescriptionProps> = ({
+const ManpowerDistribution: React.FC<ManpowerDistributionProps> = ({
   currentShift,
   assignments,
   supervisor,
@@ -55,14 +55,14 @@ const ManpowerDescription: React.FC<ManpowerDescriptionProps> = ({
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [notes, setNotes] = useState('');
-  const [savedDescriptions, setSavedDescriptions] = useState<DescriptionRecord[]>([]);
-  const [selectedHistoryRecord, setSelectedHistoryRecord] = useState<DescriptionRecord | null>(null);
+  const [savedDistributions, setSavedDistributions] = useState<DistributionRecord[]>([]);
+  const [selectedHistoryRecord, setSelectedHistoryRecord] = useState<DistributionRecord | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  // Load saved descriptions from localStorage
+  // Load saved distributions from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('manpowerDescriptions');
+    const saved = localStorage.getItem('manpowerDistributions');
     if (saved) {
       try {
         const parsed = JSON.parse(saved).map((record: any) => ({
@@ -73,23 +73,23 @@ const ManpowerDescription: React.FC<ManpowerDescriptionProps> = ({
           },
           createdAt: new Date(record.createdAt)
         }));
-        setSavedDescriptions(parsed);
+        setSavedDistributions(parsed);
       } catch (error) {
-        console.error('Error loading saved descriptions:', error);
+        console.error('Error loading saved distributions:', error);
       }
     }
   }, []);
 
-  // Save descriptions to localStorage
-  const saveDescriptions = (descriptions: DescriptionRecord[]) => {
-    localStorage.setItem('manpowerDescriptions', JSON.stringify(descriptions));
-    setSavedDescriptions(descriptions);
+  // Save distributions to localStorage
+  const saveDistributions = (distributions: DistributionRecord[]) => {
+    localStorage.setItem('manpowerDistributions', JSON.stringify(distributions));
+    setSavedDistributions(distributions);
   };
 
-  const generatePDFContent = (record: DescriptionRecord) => {
+  const generatePDFContent = (record: DistributionRecord) => {
     const dateRangeStr = `${format(record.dateRange.start, 'MMMM d')} to ${format(record.dateRange.end, 'MMMM d, yyyy')}`;
     
-    let content = `MANPOWER DESCRIPTION LIST\n`;
+    let content = `MANPOWER DISTRIBUTION LIST\n`;
     content += `${dateRangeStr}\n`;
     content += `Shift: ${record.shift}\n`;
     content += `\n`;
@@ -163,33 +163,33 @@ const ManpowerDescription: React.FC<ManpowerDescriptionProps> = ({
     return content;
   };
 
-  const createPDFBlob = (record: DescriptionRecord) => {
+  const createPDFBlob = (record: DistributionRecord) => {
     const content = generatePDFContent(record);
     return new Blob([content], { type: 'text/plain;charset=utf-8' });
   };
 
-  const downloadAsPDF = (record: DescriptionRecord) => {
+  const downloadAsPDF = (record: DistributionRecord) => {
     const blob = createPDFBlob(record);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     const dateRangeStr = `${format(record.dateRange.start, 'MMM-d')}_to_${format(record.dateRange.end, 'MMM-d-yyyy')}`;
-    a.download = `manpower_description_${dateRangeStr}.txt`;
+    a.download = `manpower_distribution_${dateRangeStr}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success('Description downloaded successfully');
+    toast.success('Distribution downloaded successfully');
   };
 
-  const printDescription = (record: DescriptionRecord) => {
+  const printDistribution = (record: DistributionRecord) => {
     const content = generatePDFContent(record);
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(`
         <html>
           <head>
-            <title>Manpower Description</title>
+            <title>Manpower Distribution</title>
             <style>
               body { font-family: Arial, sans-serif; white-space: pre-line; padding: 20px; }
               h1 { color: #333; }
@@ -203,14 +203,14 @@ const ManpowerDescription: React.FC<ManpowerDescriptionProps> = ({
     }
   };
 
-  const sendByEmail = (record: DescriptionRecord) => {
+  const sendByEmail = (record: DistributionRecord) => {
     const dateRangeStr = `${format(record.dateRange.start, 'MMMM d')} to ${format(record.dateRange.end, 'MMMM d, yyyy')}`;
-    const subject = `YSOD ${record.shift} Manpower Description for ${dateRangeStr}`;
+    const subject = `YSOD ${record.shift} Manpower Distribution for ${dateRangeStr}`;
     
     // Simplified email body as requested
     const emailBody = `Greetings All,
 
-Please find attached the YSOD ${record.shift} manpower description for the period ${dateRangeStr}.
+Please find attached the YSOD ${record.shift} manpower distribution for the period ${dateRangeStr}.
 
 Best regards,
 Security Operations Team`;
@@ -222,7 +222,7 @@ Security Operations Team`;
     // Create a downloadable link for the attachment
     const attachmentLink = document.createElement('a');
     attachmentLink.href = url;
-    const filename = `YSOD_${record.shift}_Manpower_Description_${format(record.dateRange.start, 'MMM-d')}_to_${format(record.dateRange.end, 'MMM-d-yyyy')}.txt`;
+    const filename = `YSOD_${record.shift}_Manpower_Distribution_${format(record.dateRange.start, 'MMM-d')}_to_${format(record.dateRange.end, 'MMM-d-yyyy')}.txt`;
     attachmentLink.download = filename;
     
     // Download the file first (user can then attach it manually)
@@ -240,13 +240,13 @@ Security Operations Team`;
     }, 500);
   };
 
-  const saveCurrentDescription = () => {
+  const saveCurrentDistribution = () => {
     if (!startDate || !endDate) {
       toast.error('Please select both start and end dates');
       return;
     }
 
-    const newRecord: DescriptionRecord = {
+    const newRecord: DistributionRecord = {
       id: Date.now().toString(),
       dateRange: { start: startDate, end: endDate },
       shift: currentShift,
@@ -257,9 +257,9 @@ Security Operations Team`;
       createdAt: new Date()
     };
 
-    const updated = [newRecord, ...savedDescriptions];
-    saveDescriptions(updated);
-    toast.success('Description saved successfully');
+    const updated = [newRecord, ...savedDistributions];
+    saveDistributions(updated);
+    toast.success('Distribution saved successfully');
     setShowCreateDialog(false);
     setStartDate(undefined);
     setEndDate(undefined);
@@ -340,12 +340,12 @@ Security Operations Team`;
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
               <FileText size={16} className="mr-2" />
-              Create Description
+              Create Distribution
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Create Manpower Description</DialogTitle>
+              <DialogTitle>Create Manpower Distribution</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               {/* Date Range Selection */}
@@ -421,7 +421,7 @@ Security Operations Team`;
               <div>
                 <label className="text-sm font-medium mb-2 block">Notes (Optional)</label>
                 <Textarea
-                  placeholder="Add any additional notes about this description..."
+                  placeholder="Add any additional notes about this distribution..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
@@ -431,7 +431,7 @@ Security Operations Team`;
               {/* Current Assignment Preview with Table */}
               {startDate && endDate && (
                 <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Description Preview</h4>
+                  <h4 className="font-medium mb-2">Distribution Preview</h4>
                   <p className="text-sm text-slate-600 dark:text-slate-400">
                     Week: {format(startDate, 'MMMM d')} to {format(endDate, 'MMMM d, yyyy')}
                   </p>
@@ -448,8 +448,8 @@ Security Operations Team`;
               )}
 
               <div className="flex gap-2 pt-4">
-                <Button onClick={saveCurrentDescription} className="flex-1">
-                  Save Description
+                <Button onClick={saveCurrentDistribution} className="flex-1">
+                  Save Distribution
                 </Button>
                 <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
                   Cancel
@@ -463,18 +463,18 @@ Security Operations Team`;
           <DialogTrigger asChild>
             <Button variant="outline">
               <History size={16} className="mr-2" />
-              View History ({savedDescriptions.length})
+              View History ({savedDistributions.length})
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Description History</DialogTitle>
+              <DialogTitle>Distribution History</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              {savedDescriptions.length === 0 ? (
-                <p className="text-center text-slate-500 py-8">No saved descriptions yet</p>
+              {savedDistributions.length === 0 ? (
+                <p className="text-center text-slate-500 py-8">No saved distributions yet</p>
               ) : (
-                savedDescriptions.map((record) => (
+                savedDistributions.map((record) => (
                   <Card key={record.id} className="hover:shadow-md transition-shadow">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center justify-between">
@@ -494,7 +494,7 @@ Security Operations Team`;
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => printDescription(record)}
+                            onClick={() => printDistribution(record)}
                           >
                             <Printer size={14} className="mr-1" />
                             Print
@@ -536,4 +536,4 @@ Security Operations Team`;
   );
 };
 
-export default ManpowerDescription;
+export default ManpowerDistribution;
