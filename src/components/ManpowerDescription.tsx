@@ -86,37 +86,34 @@ const ManpowerDistribution: React.FC<ManpowerDistributionProps> = ({
     setSavedDistributions(distributions);
   };
 
-  const generatePDFContent = (record: DistributionRecord) => {
+  const generateStructuredContent = (record: DistributionRecord) => {
     const dateRangeStr = `${format(record.dateRange.start, 'MMMM d')} to ${format(record.dateRange.end, 'MMMM d, yyyy')}`;
     
-    let content = `MANPOWER DISTRIBUTION LIST\n`;
-    content += `${dateRangeStr}\n`;
-    content += `Shift: ${record.shift}\n`;
-    content += `\n`;
-    
-    if (record.supervisor) {
-      content += `Supervisor: ${record.supervisor.name} (Badge: ${record.supervisor.badge})\n`;
-    }
-    if (record.coordinator) {
-      content += `Coordinator: ${record.coordinator.name} (Badge: ${record.coordinator.badge})\n`;
-    }
-    content += `\n`;
-
-    // Create table format for PDF
-    content += `${'ASSIGNMENT'.padEnd(25)} ${'NAME'.padEnd(25)} ${'BADGE'.padEnd(10)} ${'GRADE'.padEnd(8)} ${'AREA'.padEnd(10)}\n`;
-    content += `${'-'.repeat(80)}\n`;
+    // Create structured data for table format
+    const tableData: Array<{
+      goal: string;
+      owner: string;
+      status: string;
+      currentState: string;
+      desiredState: string;
+      gap: string;
+      risk: string;
+      priority: string;
+      comments: string;
+    }> = [];
 
     // Group assignments by area for better organization
     const gateAreas = {
-      NGL: { name: 'NGL Area', assignments: [] as Assignment[] },
-      YRD: { name: 'YRD Area', assignments: [] as Assignment[] },
-      BUP: { name: 'BUP Area', assignments: [] as Assignment[] },
-      HUH: { name: 'HUH Area', assignments: [] as Assignment[] },
-      YNT: { name: 'YNT Area', assignments: [] as Assignment[] }
+      NGL: { name: 'NGL Area Gates', assignments: [] as Assignment[] },
+      YRD: { name: 'YRD Area Gates', assignments: [] as Assignment[] },
+      BUP: { name: 'BUP Area Gates', assignments: [] as Assignment[] },
+      HUH: { name: 'HUH Area Gates', assignments: [] as Assignment[] },
+      YNT: { name: 'YNT Area Gates', assignments: [] as Assignment[] }
     };
 
     const otherAssignments: Assignment[] = [];
 
+    // Categorize assignments
     record.assignments.forEach(assignment => {
       if (assignment.area && gateAreas[assignment.area as keyof typeof gateAreas]) {
         gateAreas[assignment.area as keyof typeof gateAreas].assignments.push(assignment);
@@ -125,42 +122,243 @@ const ManpowerDistribution: React.FC<ManpowerDistributionProps> = ({
       }
     });
 
-    // Add gate areas to table
+    // Process gate areas
     Object.entries(gateAreas).forEach(([areaCode, areaData]) => {
       if (areaData.assignments.length > 0) {
-        areaData.assignments.forEach(assignment => {
-          assignment.employees.forEach(emp => {
-            content += `${assignment.name.padEnd(25)} ${emp.name.padEnd(25)} ${emp.badge.padEnd(10)} ${emp.gradeCode.padEnd(8)} ${areaCode.padEnd(10)}\n`;
-          });
-          if (assignment.employees.length === 0) {
-            content += `${assignment.name.padEnd(25)} ${'No personnel assigned'.padEnd(25)} ${'-'.padEnd(10)} ${'-'.padEnd(8)} ${areaCode.padEnd(10)}\n`;
-          }
+        const totalAssigned = areaData.assignments.reduce((sum, assignment) => sum + assignment.employees.length, 0);
+        const totalCapacity = areaData.assignments.reduce((sum, assignment) => sum + assignment.maxCapacity, 0);
+        const gapAnalysis = totalCapacity - totalAssigned;
+        
+        tableData.push({
+          goal: areaData.name,
+          owner: supervisor?.name || 'Supervisor',
+          status: gapAnalysis === 0 ? 'Fully Staffed' : gapAnalysis > 0 ? 'Under Staffed' : 'Over Staffed',
+          currentState: totalAssigned.toString(),
+          desiredState: totalCapacity.toString(),
+          gap: gapAnalysis > 0 ? `Need ${gapAnalysis}` : gapAnalysis < 0 ? `Excess ${Math.abs(gapAnalysis)}` : 'Balanced',
+          risk: gapAnalysis > 2 ? 'High' : gapAnalysis > 0 ? 'Medium' : 'Low',
+          priority: gapAnalysis > 2 ? 'High' : gapAnalysis > 0 ? 'Medium' : 'Low',
+          comments: `${areaData.assignments.length} gates assigned`
         });
       }
     });
 
-    // Add other assignments (patrols, training, etc.)
-    otherAssignments.forEach(assignment => {
-      assignment.employees.forEach(emp => {
-        const assignmentType = assignment.type.toUpperCase();
-        content += `${assignment.name.padEnd(25)} ${emp.name.padEnd(25)} ${emp.badge.padEnd(10)} ${emp.gradeCode.padEnd(8)} ${assignmentType.padEnd(10)}\n`;
-      });
-      if (assignment.employees.length === 0) {
-        const assignmentType = assignment.type.toUpperCase();
-        content += `${assignment.name.padEnd(25)} ${'No personnel assigned'.padEnd(25)} ${'-'.padEnd(10)} ${'-'.padEnd(8)} ${assignmentType.padEnd(10)}\n`;
+    // Process other assignments
+    ['patrol', 'training', 'vacation'].forEach(type => {
+      const typeAssignments = otherAssignments.filter(a => a.type === type);
+      if (typeAssignments.length > 0) {
+        const totalAssigned = typeAssignments.reduce((sum, assignment) => sum + assignment.employees.length, 0);
+        const totalCapacity = typeAssignments.reduce((sum, assignment) => sum + assignment.maxCapacity, 0);
+        const gapAnalysis = totalCapacity - totalAssigned;
+        
+        tableData.push({
+          goal: `${type.charAt(0).toUpperCase() + type.slice(1)} Operations`,
+          owner: coordinator?.name || 'Coordinator',
+          status: totalAssigned > 0 ? 'Active' : 'Available',
+          currentState: totalAssigned.toString(),
+          desiredState: 'Variable',
+          gap: gapAnalysis > 0 ? `Capacity ${gapAnalysis}` : 'At Capacity',
+          risk: 'Low',
+          priority: type === 'patrol' ? 'High' : 'Medium',
+          comments: `${typeAssignments.length} ${type} assignments`
+        });
       }
     });
 
-    content += `${'-'.repeat(80)}\n`;
-    content += `\nTotal Personnel: ${record.assignments.reduce((total, assignment) => total + assignment.employees.length, 0)}\n`;
+    return { dateRangeStr, tableData };
+  };
+
+  const generatePDFContent = (record: DistributionRecord) => {
+    const { dateRangeStr, tableData } = generateStructuredContent(record);
+    
+    let content = `YSOD SECURITY MANPOWER DISTRIBUTION PLAN\n`;
+    content += `Period: ${dateRangeStr}\n`;
+    content += `Shift: ${record.shift}\n`;
+    content += `Generated: ${format(new Date(), 'PPP p')}\n\n`;
+    
+    if (record.supervisor) {
+      content += `Supervisor: ${record.supervisor.name} (Badge: ${record.supervisor.badge})\n`;
+    }
+    if (record.coordinator) {
+      content += `Coordinator: ${record.coordinator.name} (Badge: ${record.coordinator.badge})\n`;
+    }
+    content += '\n';
+
+    // Create structured table
+    content += `${'GOAL/AREA'.padEnd(25)} ${'OWNER'.padEnd(15)} ${'STATUS'.padEnd(12)} ${'CURRENT'.padEnd(8)} ${'DESIRED'.padEnd(8)} ${'GAP'.padEnd(12)} ${'RISK'.padEnd(8)} ${'PRIORITY'.padEnd(10)} ${'COMMENTS'.padEnd(20)}\n`;
+    content += `${'-'.repeat(120)}\n`;
+
+    tableData.forEach(row => {
+      content += `${row.goal.padEnd(25)} ${row.owner.padEnd(15)} ${row.status.padEnd(12)} ${row.currentState.padEnd(8)} ${row.desiredState.padEnd(8)} ${row.gap.padEnd(12)} ${row.risk.padEnd(8)} ${row.priority.padEnd(10)} ${row.comments.padEnd(20)}\n`;
+    });
+
+    content += `${'-'.repeat(120)}\n`;
+    
+    // Personnel Details Section
+    content += `\nDETAILED PERSONNEL ASSIGNMENT:\n`;
+    content += `${'-'.repeat(60)}\n`;
+    
+    record.assignments.forEach(assignment => {
+      if (assignment.employees.length > 0) {
+        content += `\n${assignment.name.toUpperCase()}:\n`;
+        assignment.employees.forEach(emp => {
+          content += `  • ${emp.name} (Badge: ${emp.badge}, Grade: ${emp.gradeCode})\n`;
+        });
+      }
+    });
+
+    const totalPersonnel = record.assignments.reduce((total, assignment) => total + assignment.employees.length, 0);
+    content += `\nTOTAL ACTIVE PERSONNEL: ${totalPersonnel}\n`;
 
     if (record.notes) {
-      content += `\nNotes:\n${record.notes}\n`;
+      content += `\nADDITIONAL NOTES:\n${record.notes}\n`;
     }
 
-    content += `\nGenerated on: ${format(new Date(), 'PPP p')}\n`;
-
     return content;
+  };
+
+  const generateHTMLTable = (record: DistributionRecord) => {
+    const { dateRangeStr, tableData } = generateStructuredContent(record);
+    
+    let html = `
+      <html>
+        <head>
+          <title>YSOD Security Manpower Distribution Plan</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 20px; 
+              background-color: #f5f5f5;
+            }
+            .header {
+              background: linear-gradient(135deg, #1e40af, #7c3aed);
+              color: white;
+              padding: 20px;
+              border-radius: 8px;
+              margin-bottom: 20px;
+              text-align: center;
+            }
+            .header h1 {
+              margin: 0;
+              font-size: 24px;
+              font-weight: bold;
+            }
+            .header p {
+              margin: 5px 0;
+              opacity: 0.9;
+            }
+            .info-section {
+              background: white;
+              padding: 15px;
+              border-radius: 8px;
+              margin-bottom: 20px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              background: white;
+              border-radius: 8px;
+              overflow: hidden;
+              box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            }
+            th { 
+              background: linear-gradient(135deg, #f97316, #dc2626);
+              color: white; 
+              padding: 12px 8px; 
+              text-align: left; 
+              font-weight: bold;
+              font-size: 12px;
+              text-transform: uppercase;
+            }
+            td { 
+              padding: 10px 8px; 
+              border-bottom: 1px solid #e5e7eb;
+              font-size: 13px;
+            }
+            tr:nth-child(even) { 
+              background-color: #f9fafb; 
+            }
+            tr:hover {
+              background-color: #f3f4f6;
+            }
+            .status-active { background-color: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+            .status-staffed { background-color: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+            .status-under { background-color: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+            .priority-high { background-color: #fca5a5; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+            .priority-medium { background-color: #fcd34d; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+            .priority-low { background-color: #a7f3d0; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+            .risk-high { background-color: #fca5a5; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+            .risk-medium { background-color: #fcd34d; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+            .risk-low { background-color: #a7f3d0; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+            .footer {
+              margin-top: 20px;
+              text-align: center;
+              color: #6b7280;
+              font-size: 12px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>YSOD SECURITY MANPOWER DISTRIBUTION PLAN</h1>
+            <p>Period: ${dateRangeStr} | Shift: ${record.shift}</p>
+          </div>
+          
+          <div class="info-section">
+            <strong>Command Structure:</strong><br>
+            ${record.supervisor ? `Supervisor: ${record.supervisor.name} (Badge: ${record.supervisor.badge})<br>` : ''}
+            ${record.coordinator ? `Coordinator: ${record.coordinator.name} (Badge: ${record.coordinator.badge})<br>` : ''}
+            <strong>Total Active Personnel:</strong> ${record.assignments.reduce((total, assignment) => total + assignment.employees.length, 0)}
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Goal/Area</th>
+                <th>Owner</th>
+                <th>Status</th>
+                <th>Current</th>
+                <th>Desired</th>
+                <th>Gap</th>
+                <th>Risk</th>
+                <th>Priority</th>
+                <th>Comments</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+    tableData.forEach(row => {
+      const statusClass = row.status.includes('Fully') ? 'status-staffed' : 
+                         row.status.includes('Under') ? 'status-under' : 'status-active';
+      const priorityClass = `priority-${row.priority.toLowerCase()}`;
+      const riskClass = `risk-${row.risk.toLowerCase()}`;
+      
+      html += `
+              <tr>
+                <td><strong>${row.goal}</strong></td>
+                <td>${row.owner}</td>
+                <td><span class="${statusClass}">${row.status}</span></td>
+                <td>${row.currentState}</td>
+                <td>${row.desiredState}</td>
+                <td>${row.gap}</td>
+                <td><span class="${riskClass}">${row.risk}</span></td>
+                <td><span class="${priorityClass}">${row.priority}</span></td>
+                <td>${row.comments}</td>
+              </tr>`;
+    });
+
+    html += `
+            </tbody>
+          </table>
+          
+          <div class="footer">
+            Generated on ${format(new Date(), 'PPP p')} | YSOD Security Operations
+          </div>
+        </body>
+      </html>`;
+
+    return html;
   };
 
   const createPDFBlob = (record: DistributionRecord) => {
@@ -169,12 +367,13 @@ const ManpowerDistribution: React.FC<ManpowerDistributionProps> = ({
   };
 
   const downloadAsPDF = (record: DistributionRecord) => {
-    const blob = createPDFBlob(record);
+    const content = generatePDFContent(record);
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     const dateRangeStr = `${format(record.dateRange.start, 'MMM-d')}_to_${format(record.dateRange.end, 'MMM-d-yyyy')}`;
-    a.download = `manpower_distribution_${dateRangeStr}.txt`;
+    a.download = `YSOD_Manpower_Distribution_${dateRangeStr}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -183,21 +382,10 @@ const ManpowerDistribution: React.FC<ManpowerDistributionProps> = ({
   };
 
   const printDistribution = (record: DistributionRecord) => {
-    const content = generatePDFContent(record);
+    const htmlContent = generateHTMLTable(record);
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Manpower Distribution</title>
-            <style>
-              body { font-family: Arial, sans-serif; white-space: pre-line; padding: 20px; }
-              h1 { color: #333; }
-            </style>
-          </head>
-          <body>${content}</body>
-        </html>
-      `);
+      printWindow.document.write(htmlContent);
       printWindow.document.close();
       printWindow.print();
     }
@@ -205,38 +393,41 @@ const ManpowerDistribution: React.FC<ManpowerDistributionProps> = ({
 
   const sendByEmail = (record: DistributionRecord) => {
     const dateRangeStr = `${format(record.dateRange.start, 'MMMM d')} to ${format(record.dateRange.end, 'MMMM d, yyyy')}`;
-    const subject = `YSOD ${record.shift} Manpower Distribution for ${dateRangeStr}`;
+    const subject = `YSOD ${record.shift} Manpower Distribution Plan - ${dateRangeStr}`;
     
-    // Simplified email body as requested
     const emailBody = `Greetings All,
 
-Please find attached the YSOD ${record.shift} manpower distribution for the period ${dateRangeStr}.
+Please find the attached YSOD ${record.shift} manpower distribution plan for the period ${dateRangeStr}.
+
+This structured plan includes:
+- Resource allocation by area
+- Gap analysis and risk assessment  
+- Personnel assignment details
+- Priority recommendations
 
 Best regards,
 Security Operations Team`;
 
-    // Create the PDF file for attachment
-    const blob = createPDFBlob(record);
+    // Create the structured content file for attachment
+    const content = generatePDFContent(record);
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     
-    // Create a downloadable link for the attachment
     const attachmentLink = document.createElement('a');
     attachmentLink.href = url;
-    const filename = `YSOD_${record.shift}_Manpower_Distribution_${format(record.dateRange.start, 'MMM-d')}_to_${format(record.dateRange.end, 'MMM-d-yyyy')}.txt`;
+    const filename = `YSOD_Manpower_Distribution_Plan_${format(record.dateRange.start, 'MMM-d')}_to_${format(record.dateRange.end, 'MMM-d-yyyy')}.txt`;
     attachmentLink.download = filename;
     
-    // Download the file first (user can then attach it manually)
     document.body.appendChild(attachmentLink);
     attachmentLink.click();
     document.body.removeChild(attachmentLink);
     
-    // Open email client with the simplified body
     const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
     
     setTimeout(() => {
       window.open(mailtoLink);
       URL.revokeObjectURL(url);
-      toast.success('Email client opened and PDF downloaded for attachment');
+      toast.success('Email client opened and structured distribution plan downloaded for attachment');
     }, 500);
   };
 
