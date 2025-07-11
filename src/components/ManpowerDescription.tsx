@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CalendarIcon, Download, Mail, FileText, History, Printer } from 'lucide-react';
 import { format, addDays, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -90,7 +91,8 @@ const ManpowerDescription: React.FC<ManpowerDescriptionProps> = ({
     
     let content = `MANPOWER DESCRIPTION LIST\n`;
     content += `${dateRangeStr}\n`;
-    content += `Shift: ${record.shift}\n\n`;
+    content += `Shift: ${record.shift}\n`;
+    content += `\n`;
     
     if (record.supervisor) {
       content += `Supervisor: ${record.supervisor.name} (Badge: ${record.supervisor.badge})\n`;
@@ -100,7 +102,11 @@ const ManpowerDescription: React.FC<ManpowerDescriptionProps> = ({
     }
     content += `\n`;
 
-    // Group assignments by area
+    // Create table format for PDF
+    content += `${'ASSIGNMENT'.padEnd(25)} ${'NAME'.padEnd(25)} ${'BADGE'.padEnd(10)} ${'GRADE'.padEnd(8)} ${'AREA'.padEnd(10)}\n`;
+    content += `${'-'.repeat(80)}\n`;
+
+    // Group assignments by area for better organization
     const gateAreas = {
       NGL: { name: 'NGL Area', assignments: [] as Assignment[] },
       YRD: { name: 'YRD Area', assignments: [] as Assignment[] },
@@ -114,63 +120,45 @@ const ManpowerDescription: React.FC<ManpowerDescriptionProps> = ({
     record.assignments.forEach(assignment => {
       if (assignment.area && gateAreas[assignment.area as keyof typeof gateAreas]) {
         gateAreas[assignment.area as keyof typeof gateAreas].assignments.push(assignment);
-      } else if (assignment.type !== 'gate') {
+      } else {
         otherAssignments.push(assignment);
       }
     });
 
-    // Add gate areas
+    // Add gate areas to table
     Object.entries(gateAreas).forEach(([areaCode, areaData]) => {
       if (areaData.assignments.length > 0) {
-        content += `${areaData.name}:\n`;
         areaData.assignments.forEach(assignment => {
-          content += `  ${assignment.name}:\n`;
           assignment.employees.forEach(emp => {
-            content += `    - ${emp.name} (Badge: ${emp.badge}, Grade: ${emp.gradeCode})\n`;
+            content += `${assignment.name.padEnd(25)} ${emp.name.padEnd(25)} ${emp.badge.padEnd(10)} ${emp.gradeCode.padEnd(8)} ${areaCode.padEnd(10)}\n`;
           });
           if (assignment.employees.length === 0) {
-            content += `    - No personnel assigned\n`;
+            content += `${assignment.name.padEnd(25)} ${'No personnel assigned'.padEnd(25)} ${'-'.padEnd(10)} ${'-'.padEnd(8)} ${areaCode.padEnd(10)}\n`;
           }
         });
-        content += `\n`;
       }
     });
 
-    // Add patrols
-    const patrols = otherAssignments.filter(a => a.type === 'patrol');
-    if (patrols.length > 0) {
-      content += `Vehicle Patrols:\n`;
-      patrols.forEach(assignment => {
-        content += `  ${assignment.name}:\n`;
-        assignment.employees.forEach(emp => {
-          content += `    - ${emp.name} (Badge: ${emp.badge}, Grade: ${emp.gradeCode})\n`;
-        });
-        if (assignment.employees.length === 0) {
-          content += `    - No personnel assigned\n`;
-        }
+    // Add other assignments (patrols, training, etc.)
+    otherAssignments.forEach(assignment => {
+      assignment.employees.forEach(emp => {
+        const assignmentType = assignment.type.toUpperCase();
+        content += `${assignment.name.padEnd(25)} ${emp.name.padEnd(25)} ${emp.badge.padEnd(10)} ${emp.gradeCode.padEnd(8)} ${assignmentType.padEnd(10)}\n`;
       });
-      content += `\n`;
-    }
+      if (assignment.employees.length === 0) {
+        const assignmentType = assignment.type.toUpperCase();
+        content += `${assignment.name.padEnd(25)} ${'No personnel assigned'.padEnd(25)} ${'-'.padEnd(10)} ${'-'.padEnd(8)} ${assignmentType.padEnd(10)}\n`;
+      }
+    });
 
-    // Add special assignments
-    const special = otherAssignments.filter(a => a.type === 'training' || a.type === 'vacation');
-    if (special.length > 0) {
-      content += `Special Assignments:\n`;
-      special.forEach(assignment => {
-        content += `  ${assignment.name}:\n`;
-        assignment.employees.forEach(emp => {
-          content += `    - ${emp.name} (Badge: ${emp.badge}, Grade: ${emp.gradeCode})\n`;
-        });
-        if (assignment.employees.length === 0) {
-          content += `    - No personnel assigned\n`;
-        }
-      });
-      content += `\n`;
-    }
+    content += `${'-'.repeat(80)}\n`;
+    content += `\nTotal Personnel: ${record.assignments.reduce((total, assignment) => total + assignment.employees.length, 0)}\n`;
 
     if (record.notes) {
-      content += `Notes:\n${record.notes}\n`;
+      content += `\nNotes:\n${record.notes}\n`;
     }
+
+    content += `\nGenerated on: ${format(new Date(), 'PPP p')}\n`;
 
     return content;
   };
@@ -217,31 +205,15 @@ const ManpowerDescription: React.FC<ManpowerDescriptionProps> = ({
 
   const sendByEmail = (record: DescriptionRecord) => {
     const dateRangeStr = `${format(record.dateRange.start, 'MMMM d')} to ${format(record.dateRange.end, 'MMMM d, yyyy')}`;
-    const subject = `Manpower Description List for ${dateRangeStr}`;
+    const subject = `YSOD ${record.shift} Manpower Description for ${dateRangeStr}`;
     
-    // Enhanced email body with proper greeting
+    // Simplified email body as requested
     const emailBody = `Greetings All,
 
 Please find attached the YSOD ${record.shift} manpower description for the period ${dateRangeStr}.
 
-This document contains:
-- Personnel assignments by area (NGL, YRD, BUP, HUH, YNT)
-- Vehicle patrol assignments
-- Special assignments (training, vacation)
-- Supervisor and coordinator details
-
-${record.notes ? `Additional Notes: ${record.notes}` : ''}
-
-Please review the assignments and contact the supervisor or coordinator if you have any questions or concerns.
-
 Best regards,
-Security Operations Team
-
----
-Generated on: ${format(new Date(), 'PPP p')}
-Shift: ${record.shift}
-${record.supervisor ? `Supervisor: ${record.supervisor.name} (Badge: ${record.supervisor.badge})` : ''}
-${record.coordinator ? `Coordinator: ${record.coordinator.name} (Badge: ${record.coordinator.badge})` : ''}`;
+Security Operations Team`;
 
     // Create the PDF file for attachment
     const blob = createPDFBlob(record);
@@ -258,7 +230,7 @@ ${record.coordinator ? `Coordinator: ${record.coordinator.name} (Badge: ${record
     attachmentLink.click();
     document.body.removeChild(attachmentLink);
     
-    // Open email client with the enhanced body
+    // Open email client with the simplified body
     const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
     
     setTimeout(() => {
@@ -306,6 +278,60 @@ ${record.coordinator ? `Coordinator: ${record.coordinator.name} (Badge: ${record
     setWeekRange(startOfWeek);
   };
 
+  // Helper function to render assignment table
+  const renderAssignmentTable = (assignments: Assignment[]) => {
+    const allEmployees: Array<{ assignment: string; employee: EmployeeProfile; area?: string }> = [];
+    
+    assignments.forEach(assignment => {
+      assignment.employees.forEach(employee => {
+        allEmployees.push({
+          assignment: assignment.name,
+          employee,
+          area: assignment.area || assignment.type.toUpperCase()
+        });
+      });
+    });
+
+    return (
+      <div className="mt-4">
+        <h4 className="font-medium mb-2">Personnel Assignment Table</h4>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Assignment</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Badge</TableHead>
+              <TableHead>Grade</TableHead>
+              <TableHead>Area/Type</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {allEmployees.length > 0 ? (
+              allEmployees.map((item, index) => (
+                <TableRow key={index}>
+                  <TableCell>{item.assignment}</TableCell>
+                  <TableCell>{item.employee.name}</TableCell>
+                  <TableCell>{item.employee.badge}</TableCell>
+                  <TableCell>{item.employee.gradeCode}</TableCell>
+                  <TableCell>{item.area}</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  No personnel assigned
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+        <div className="mt-2 text-sm text-muted-foreground">
+          Total Personnel: {allEmployees.length}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
       {/* Main Actions */}
@@ -317,7 +343,7 @@ ${record.coordinator ? `Coordinator: ${record.coordinator.name} (Badge: ${record
               Create Description
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create Manpower Description</DialogTitle>
             </DialogHeader>
@@ -402,7 +428,7 @@ ${record.coordinator ? `Coordinator: ${record.coordinator.name} (Badge: ${record
                 />
               </div>
 
-              {/* Current Assignment Preview */}
+              {/* Current Assignment Preview with Table */}
               {startDate && endDate && (
                 <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg">
                   <h4 className="font-medium mb-2">Description Preview</h4>
@@ -412,9 +438,12 @@ ${record.coordinator ? `Coordinator: ${record.coordinator.name} (Badge: ${record
                   <p className="text-sm text-slate-600 dark:text-slate-400">
                     Shift: {currentShift}
                   </p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                     Active Assignments: {assignments.filter(a => a.employees.length > 0).length}
                   </p>
+                  
+                  {/* Show the assignment table */}
+                  {renderAssignmentTable(assignments.filter(a => a.employees.length > 0))}
                 </div>
               )}
 
