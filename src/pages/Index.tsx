@@ -13,6 +13,7 @@ import EnhancedGateCard from '@/components/EnhancedGateCard';
 import AssignmentManager from '@/components/AssignmentManager';
 import CommandStructureManager from '@/components/CommandStructureManager';
 import ManpowerDescription from '@/components/ManpowerDescription';
+import AreaNotesManager from '@/components/AreaNotesManager';
 
 interface Assignment {
   id: string;
@@ -602,19 +603,31 @@ const Index = () => {
             {/* Main Assignment Area */}
             <div className="lg:col-span-3 space-y-4">
               {/* Security Gates by Area */}
-              {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => <div key={areaCode} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`bg-gradient-to-r ${areaData.color} p-2 rounded-lg`}>
-                      <MapPin className="text-white" size={20} />
+              {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => <div key={areaCode} className="space-y-4">
+                  <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className={`bg-gradient-to-r ${areaData.color} p-2 rounded-lg`}>
+                        <MapPin className="text-white" size={20} />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{areaData.name}</h3>
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                        {gateAssignmentsByArea[areaCode]?.length || 0} Gates
+                      </Badge>
                     </div>
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{areaData.name}</h3>
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
-                      {gateAssignmentsByArea[areaCode]?.length || 0} Gates
-                    </Badge>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {gateAssignmentsByArea[areaCode]?.map(assignment => <EnhancedGateCard key={assignment.id} assignment={assignment} onToggleWeapon={toggleWeapon} getAssignmentColor={getAssignmentColor} getRoleColor={getRoleColor} />)}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {gateAssignmentsByArea[areaCode]?.map(assignment => <EnhancedGateCard key={assignment.id} assignment={assignment} onToggleWeapon={toggleWeapon} getAssignmentColor={getAssignmentColor} getRoleColor={getRoleColor} />)}
-                  </div>
+                  
+                  {/* Area Notes Manager - Only visible to supervisors and coordinators */}
+                  {(supervisor || coordinator) && (
+                    <AreaNotesManager 
+                      areaCode={areaCode}
+                      areaName={areaData.name}
+                      currentUser={supervisor || coordinator}
+                      employees={currentShiftEmployees}
+                    />
+                  )}
                 </div>)}
 
               {/* Mobile Patrols */}
