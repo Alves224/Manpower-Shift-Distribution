@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -157,6 +156,8 @@ const Index = () => {
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showAttendanceTracker, setShowAttendanceTracker] = useState(false);
   const [showSkillsManager, setShowSkillsManager] = useState(false);
+  const [filteredEmployees, setFilteredEmployees] = useState<EmployeeProfile[]>([]);
+  const [selectedEmployeeForSkills, setSelectedEmployeeForSkills] = useState<EmployeeProfile | null>(null);
 
   // Toggle dark mode
   useEffect(() => {
@@ -436,6 +437,47 @@ const Index = () => {
     assignmentsCount: assignments.length
   });
 
+  const handleBulkAssign = (employeeIds: string[], assignmentId: string) => {
+    const sourceAssignment = assignments.find(a => a.id === 'unassigned');
+    const destAssignment = assignments.find(a => a.id === assignmentId);
+    
+    if (!sourceAssignment || !destAssignment) return;
+
+    // Check capacity
+    if (destAssignment.employees.length + employeeIds.length > destAssignment.maxCapacity) {
+      toast.error(`Assignment would exceed capacity (${destAssignment.maxCapacity})`);
+      return;
+    }
+
+    const employeesToMove = sourceAssignment.employees.filter(emp => employeeIds.includes(emp.id));
+
+    setAssignments(prev => prev.map(assignment => {
+      if (assignment.id === 'unassigned') {
+        return {
+          ...assignment,
+          employees: assignment.employees.filter(emp => !employeeIds.includes(emp.id))
+        };
+      }
+      if (assignment.id === assignmentId) {
+        return {
+          ...assignment,
+          employees: [...assignment.employees, ...employeesToMove]
+        };
+      }
+      return assignment;
+    }));
+
+    toast.success(`${employeeIds.length} employees assigned successfully`);
+  };
+
+  const handleFilteredResults = (results: EmployeeProfile[]) => {
+    setFilteredEmployees(results);
+  };
+
+  const handleClearFilters = () => {
+    setFilteredEmployees([]);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-slate-200 dark:from-slate-950 dark:via-gray-900 dark:to-slate-900">
       <div className="container mx-auto p-4 space-y-6">
@@ -484,45 +526,65 @@ const Index = () => {
         {/* Enhanced Features Modals */}
         {showBulkAssignment && (
           <BulkAssignmentManager 
-            employees={currentShiftEmployees}
+            availableEmployees={currentShiftEmployees}
             assignments={assignments}
-            onAssign={(employeeIds, assignmentId) => {
-              // Handle bulk assignment logic
-              console.log('Bulk assign:', employeeIds, 'to', assignmentId);
-              setShowBulkAssignment(false);
-            }}
-            onClose={() => setShowBulkAssignment(false)}
+            onBulkAssign={handleBulkAssign}
           />
         )}
 
         {showAdvancedSearch && (
-          <AdvancedSearch 
-            employees={employees}
-            assignments={assignments}
-            onClose={() => setShowAdvancedSearch(false)}
-            onEmployeeSelect={(employee) => {
-              console.log('Selected employee:', employee);
-            }}
-          />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    Advanced Search & Filter
+                  </h2>
+                  <Button onClick={() => setShowAdvancedSearch(false)} variant="ghost" size="sm">
+                    ✕
+                  </Button>
+                </div>
+                <AdvancedSearch 
+                  employees={employees}
+                  onFilteredResults={handleFilteredResults}
+                  onClearFilters={handleClearFilters}
+                />
+              </div>
+            </div>
+          </div>
         )}
 
         {showAttendanceTracker && (
-          <AttendanceTracker 
-            employees={currentShiftEmployees}
-            currentShift={currentShift}
-            onClose={() => setShowAttendanceTracker(false)}
-          />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    Attendance Tracker
+                  </h2>
+                  <Button onClick={() => setShowAttendanceTracker(false)} variant="ghost" size="sm">
+                    ✕
+                  </Button>
+                </div>
+                <AttendanceTracker 
+                  employees={currentShiftEmployees}
+                  currentShift={currentShift}
+                />
+              </div>
+            </div>
+          </div>
         )}
 
-        {showSkillsManager && (
+        {showSkillsManager && selectedEmployeeForSkills && (
           <EmployeeSkillsManager 
-            employees={employees}
+            employee={selectedEmployeeForSkills}
             onUpdateEmployee={(updatedEmployee) => {
               setEmployees(prev => prev.map(emp => 
                 emp.id === updatedEmployee.id ? updatedEmployee : emp
               ));
+              setShowSkillsManager(false);
+              setSelectedEmployeeForSkills(null);
             }}
-            onClose={() => setShowSkillsManager(false)}
           />
         )}
 
