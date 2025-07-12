@@ -194,21 +194,28 @@ const Index = () => {
     }
   }, [darkMode]);
 
-  // Load notes data from localStorage
+  // Load notes data from localStorage with improved loading
   useEffect(() => {
     const loadAreaNotes = () => {
+      console.log('Loading area notes from localStorage...');
       const notesData: Record<string, any> = {};
+      
       Object.keys(GATE_AREAS).forEach(areaCode => {
         const savedNotes = localStorage.getItem(`area-notes-${areaCode}`);
+        console.log(`Loading notes for ${areaCode}:`, savedNotes);
+        
         if (savedNotes) {
           try {
-            notesData[areaCode] = JSON.parse(savedNotes);
+            const parsedNotes = JSON.parse(savedNotes);
+            notesData[areaCode] = parsedNotes;
+            console.log(`Parsed notes for ${areaCode}:`, parsedNotes);
           } catch (error) {
             console.error(`Error parsing notes for ${areaCode}:`, error);
           }
         }
       });
-      console.log('Loaded area notes:', notesData);
+      
+      console.log('Final notes data:', notesData);
       setAreaNotesData(notesData);
     };
 
@@ -227,7 +234,7 @@ const Index = () => {
     // Also listen for custom events when notes are saved
     const handleNotesUpdate = () => {
       console.log('Notes updated event received');
-      loadAreaNotes();
+      setTimeout(loadAreaNotes, 100); // Small delay to ensure localStorage is updated
     };
     
     window.addEventListener('notesUpdated', handleNotesUpdate);
@@ -577,7 +584,8 @@ const Index = () => {
     employeeCount: employees.length,
     currentShiftEmployees: currentShiftEmployees.length,
     unassignedCount: unassignedPool?.employees.length || 0,
-    assignmentsCount: assignments.length
+    assignmentsCount: assignments.length,
+    areaNotesData
   });
 
   return (
@@ -931,25 +939,25 @@ const Index = () => {
                 </Card>
               </div>
 
-              {/* Enhanced Quick Notes Section - Right Side (1/3 width) */}
+              {/* Enhanced Quick Notes Section - Right Side (1/3 width) - Made Smaller */}
               <div className="lg:col-span-1">
                 <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/20 shadow-lg">
                   <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-lg p-2">
                     <CardTitle className="flex items-center gap-2 text-xs">
-                      <FileText size={14} />
+                      <FileText size={12} />
                       Quick Notes
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="ml-auto text-white hover:bg-white/20 h-5 px-1"
+                        className="ml-auto text-white hover:bg-white/20 h-4 px-1 text-xs"
                         onClick={() => setShowNotesManager(true)}
                       >
-                        <Settings size={10} />
+                        <Settings size={8} />
                       </Button>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-2 max-h-80 overflow-y-auto">
-                    <div className="space-y-2">
+                  <CardContent className="p-2 max-h-48 overflow-y-auto">
+                    <div className="space-y-1">
                       {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => {
                         const areaNotesInfo = areaNotesData[areaCode];
                         const hasNotes = areaNotesInfo && (
@@ -958,12 +966,12 @@ const Index = () => {
                         );
 
                         return (
-                          <div key={areaCode} className="border rounded-md p-2 bg-white/50 dark:bg-slate-800/50">
-                            <div className="flex items-center gap-2 mb-1">
-                              <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${areaData.color}`} />
+                          <div key={areaCode} className="border rounded p-1 bg-white/50 dark:bg-slate-800/50">
+                            <div className="flex items-center gap-1 mb-1">
+                              <div className={`w-1 h-1 rounded-full bg-gradient-to-r ${areaData.color}`} />
                               <span className="font-medium text-xs">{areaData.name}</span>
                               {hasNotes && (
-                                <Badge variant="secondary" className="text-xs h-3 px-1">
+                                <Badge variant="secondary" className="text-xs h-3 px-1 text-xs">
                                   {areaNotesInfo.todos?.length || 0}
                                 </Badge>
                               )}
@@ -972,24 +980,24 @@ const Index = () => {
                             {hasNotes ? (
                               <div className="space-y-1">
                                 {areaNotesInfo.notes && areaNotesInfo.notes.trim() && (
-                                  <div className="text-xs text-slate-600 dark:text-slate-400 bg-blue-50 dark:bg-blue-950/30 p-1 rounded text-wrap">
-                                    <div className="line-clamp-2 break-words">{areaNotesInfo.notes}</div>
+                                  <div className="text-xs text-slate-600 dark:text-slate-400 bg-blue-50 dark:bg-blue-950/30 p-1 rounded">
+                                    <div className="line-clamp-1 break-words text-xs">{areaNotesInfo.notes}</div>
                                   </div>
                                 )}
                                 
                                 {areaNotesInfo.todos && areaNotesInfo.todos.length > 0 && (
-                                  <div className="space-y-1">
-                                    {areaNotesInfo.todos.slice(0, 2).map((todo: any, index: number) => (
+                                  <div className="space-y-0.5">
+                                    {areaNotesInfo.todos.slice(0, 1).map((todo: any, index: number) => (
                                       <div key={index} className="flex items-start gap-1 text-xs">
-                                        <div className={`w-1 h-1 rounded-full mt-1 flex-shrink-0 ${todo.completed ? 'bg-green-500' : 'bg-orange-500'}`} />
-                                        <span className={`line-clamp-1 break-words ${todo.completed ? 'line-through text-slate-400' : 'text-slate-600 dark:text-slate-300'}`}>
+                                        <div className={`w-0.5 h-0.5 rounded-full mt-1 flex-shrink-0 ${todo.completed ? 'bg-green-500' : 'bg-orange-500'}`} />
+                                        <span className={`line-clamp-1 break-words text-xs ${todo.completed ? 'line-through text-slate-400' : 'text-slate-600 dark:text-slate-300'}`}>
                                           {todo.text}
                                         </span>
                                       </div>
                                     ))}
-                                    {areaNotesInfo.todos.length > 2 && (
-                                      <div className="text-xs text-slate-400 pl-2">
-                                        +{areaNotesInfo.todos.length - 2} more tasks
+                                    {areaNotesInfo.todos.length > 1 && (
+                                      <div className="text-xs text-slate-400 pl-1">
+                                        +{areaNotesInfo.todos.length - 1} more
                                       </div>
                                     )}
                                   </div>
@@ -1003,8 +1011,8 @@ const Index = () => {
                       })}
                       
                       {Object.keys(areaNotesData).length === 0 && (
-                        <div className="text-center text-slate-400 py-4 text-xs">
-                          <FileText size={16} className="mx-auto mb-1 opacity-50" />
+                        <div className="text-center text-slate-400 py-2 text-xs">
+                          <FileText size={12} className="mx-auto mb-1 opacity-50" />
                           No notes saved yet
                           <div className="text-xs mt-1">Click "Notes & Planning" to add notes</div>
                         </div>
