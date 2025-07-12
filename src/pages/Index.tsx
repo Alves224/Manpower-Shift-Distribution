@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Plus, Users, Shield, Car, Clock, UserPlus, Trash2, Moon, Sun, Settings, Zap, Activity, BarChart3, UserMinus, MapPin, FileText } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Plus, Users, Shield, Car, Clock, UserPlus, Trash2, Moon, Sun, Settings, Zap, Activity, BarChart3, UserMinus, MapPin, FileText, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 import EmployeeProfileForm, { EmployeeProfile } from '@/components/EmployeeProfileForm';
 import ShiftHierarchy from '@/components/ShiftHierarchy';
@@ -27,7 +30,14 @@ interface Assignment {
   area?: string;
 }
 
-const SHIFTS = ['SHIFT 1', 'SHIFT 2', 'SHIFT 3', 'SHIFT 4'];
+interface QuickNote {
+  id: string;
+  title: string;
+  content: string;
+  timestamp: Date;
+  type: 'note' | 'todo';
+  completed?: boolean;
+}
 
 // Gate areas configuration
 const GATE_AREAS = {
@@ -178,6 +188,12 @@ const Index = () => {
   const [supervisorAssignments, setSupervisorAssignments] = useState<Record<string, string | null>>({});
   const [coordinatorAssignments, setCoordinatorAssignments] = useState<Record<string, string | null>>({});
 
+  // Quick Notes states
+  const [quickNotes, setQuickNotes] = useState<QuickNote[]>([]);
+  const [newNoteTitle, setNewNoteTitle] = useState('');
+  const [newNoteContent, setNewNoteContent] = useState('');
+  const [noteType, setNoteType] = useState<'note' | 'todo'>('note');
+
   // Initialize employees with sample data
   useEffect(() => {
     console.log('Initializing employees with sample data...');
@@ -310,6 +326,63 @@ const Index = () => {
         : assignment
     ));
   }, [assignments]);
+
+  // Load quick notes from localStorage
+  useEffect(() => {
+    const savedNotes = localStorage.getItem('quick-notes');
+    if (savedNotes) {
+      try {
+        const parsed = JSON.parse(savedNotes).map((note: any) => ({
+          ...note,
+          timestamp: new Date(note.timestamp)
+        }));
+        setQuickNotes(parsed);
+      } catch (error) {
+        console.error('Error loading quick notes:', error);
+      }
+    }
+  }, []);
+
+  // Save quick notes to localStorage
+  const saveQuickNotes = (notes: QuickNote[]) => {
+    localStorage.setItem('quick-notes', JSON.stringify(notes));
+    setQuickNotes(notes);
+  };
+
+  const addQuickNote = () => {
+    if (!newNoteTitle.trim()) {
+      toast.error('Please enter a note title');
+      return;
+    }
+
+    const newNote: QuickNote = {
+      id: Date.now().toString(),
+      title: newNoteTitle,
+      content: newNoteContent,
+      timestamp: new Date(),
+      type: noteType,
+      completed: false
+    };
+
+    const updatedNotes = [newNote, ...quickNotes];
+    saveQuickNotes(updatedNotes);
+    setNewNoteTitle('');
+    setNewNoteContent('');
+    toast.success('Note added successfully');
+  };
+
+  const deleteQuickNote = (id: string) => {
+    const updatedNotes = quickNotes.filter(note => note.id !== id);
+    saveQuickNotes(updatedNotes);
+    toast.success('Note deleted');
+  };
+
+  const toggleTodoCompletion = (id: string) => {
+    const updatedNotes = quickNotes.map(note =>
+      note.id === id ? { ...note, completed: !note.completed } : note
+    );
+    saveQuickNotes(updatedNotes);
+  };
 
   const addEmployee = (employee: EmployeeProfile) => {
     console.log('Adding new employee:', employee.name);
@@ -764,7 +837,7 @@ const Index = () => {
 
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="space-y-6">
-            {/* Top Section: Personnel Pools (Left) and Notes (Right) */}
+            {/* Top Section: Personnel Pools (Left) and Quick Notes (Right) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Personnel Pools - Left Side (2/3 width) */}
               <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -886,32 +959,156 @@ const Index = () => {
                 </Card>
               </div>
 
-              {/* Quick Notes Section - Right Side (1/3 width) */}
+              {/* Enhanced Quick Notes Section - Right Side (1/3 width) */}
               <div className="lg:col-span-1">
                 <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/20 shadow-lg h-full">
                   <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-lg p-3">
                     <CardTitle className="flex items-center gap-2 text-sm">
                       <FileText size={16} />
                       Quick Notes
+                      <Badge className="bg-white/20 text-white text-xs">
+                        {quickNotes.length}
+                      </Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-3 h-full">
-                    <div className="space-y-2">
-                      {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => (
+                  <CardContent className="p-3">
+                    {/* Add Note Form */}
+                    <div className="space-y-2 mb-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                      <div className="flex gap-2">
                         <Button
-                          key={areaCode}
-                          variant="outline"
                           size="sm"
-                          className="w-full justify-start text-xs h-8"
-                          onClick={() => {
-                            // This will open the specific area notes
-                            console.log(`Opening notes for ${areaData.name}`);
-                          }}
+                          variant={noteType === 'note' ? 'default' : 'outline'}
+                          onClick={() => setNoteType('note')}
+                          className="flex-1 h-7 text-xs"
                         >
-                          <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${areaData.color} mr-2`} />
-                          {areaData.name}
+                          Note
                         </Button>
-                      ))}
+                        <Button
+                          size="sm"
+                          variant={noteType === 'todo' ? 'default' : 'outline'}
+                          onClick={() => setNoteType('todo')}
+                          className="flex-1 h-7 text-xs"
+                        >
+                          To-Do
+                        </Button>
+                      </div>
+                      <Input
+                        placeholder="Note title..."
+                        value={newNoteTitle}
+                        onChange={(e) => setNewNoteTitle(e.target.value)}
+                        className="h-8 text-xs"
+                      />
+                      <Textarea
+                        placeholder="Write your note here..."
+                        value={newNoteContent}
+                        onChange={(e) => setNewNoteContent(e.target.value)}
+                        rows={2}
+                        className="text-xs resize-none"
+                      />
+                      <Button
+                        onClick={addQuickNote}
+                        size="sm"
+                        className="w-full h-7 text-xs bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                      >
+                        <Save size={12} className="mr-1" />
+                        Save {noteType === 'note' ? 'Note' : 'To-Do'}
+                      </Button>
+                    </div>
+
+                    {/* Notes List */}
+                    <ScrollArea className="h-64">
+                      <div className="space-y-2">
+                        {quickNotes.length === 0 ? (
+                          <div className="text-center text-muted-foreground py-8 text-xs">
+                            <FileText size={32} className="mx-auto mb-2 opacity-50" />
+                            <p>No notes yet</p>
+                            <p className="text-xs mt-1">Add your first note above</p>
+                          </div>
+                        ) : (
+                          quickNotes.map((note) => (
+                            <div
+                              key={note.id}
+                              className="p-2 bg-white dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 shadow-sm"
+                            >
+                              <div className="flex items-start justify-between mb-1">
+                                <div className="flex items-center gap-2 flex-1">
+                                  {note.type === 'todo' && (
+                                    <button
+                                      onClick={() => toggleTodoCompletion(note.id)}
+                                      className={`w-3 h-3 rounded border flex-shrink-0 ${
+                                        note.completed 
+                                          ? 'bg-green-500 border-green-500' 
+                                          : 'border-slate-300 dark:border-slate-600'
+                                      }`}
+                                    >
+                                      {note.completed && (
+                                        <div className="text-white text-xs leading-none">✓</div>
+                                      )}
+                                    </button>
+                                  )}
+                                  <span className={`text-xs font-medium ${
+                                    note.completed ? 'line-through text-muted-foreground' : ''
+                                  }`}>
+                                    {note.title}
+                                  </span>
+                                  <Badge 
+                                    variant="outline" 
+                                    className={`text-xs h-4 ${
+                                      note.type === 'todo' ? 'bg-blue-50 text-blue-700' : 'bg-gray-50 text-gray-700'
+                                    }`}
+                                  >
+                                    {note.type}
+                                  </Badge>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => deleteQuickNote(note.id)}
+                                  className="h-4 w-4 p-0 text-red-500 hover:bg-red-100"
+                                >
+                                  <X size={10} />
+                                </Button>
+                              </div>
+                              {note.content && (
+                                <p className={`text-xs text-muted-foreground mb-1 ${
+                                  note.completed ? 'line-through' : ''
+                                }`}>
+                                  {note.content}
+                                </p>
+                              )}
+                              <div className="text-xs text-muted-foreground">
+                                {note.timestamp.toLocaleDateString()} {note.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </ScrollArea>
+
+                    {/* Area Access Buttons */}
+                    <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+                      <div className="text-xs font-medium mb-2 text-slate-600 dark:text-slate-400">Quick Area Access</div>
+                      <div className="space-y-1">
+                        {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => (
+                          <Button
+                            key={areaCode}
+                            variant="outline"
+                            size="sm"
+                            className="w-full justify-start text-xs h-6"
+                            onClick={() => {
+                              console.log(`Opening notes for ${areaData.name}`);
+                              // Scroll to the specific area
+                              const areaElement = document.getElementById(`area-${areaCode}`);
+                              if (areaElement) {
+                                areaElement.scrollIntoView({ behavior: 'smooth' });
+                              }
+                            }}
+                          >
+                            <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${areaData.color} mr-2`} />
+                            {areaData.name}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -920,7 +1117,7 @@ const Index = () => {
 
             {/* Security Gates by Area - Each Area Stacked Vertically */}
             {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => (
-              <div key={areaCode} className="space-y-4">
+              <div key={areaCode} id={`area-${areaCode}`} className="space-y-4">
                 <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
                   <div className="flex items-center gap-3 mb-4">
                     <div className={`bg-gradient-to-r ${areaData.color} p-2 rounded-lg`}>
