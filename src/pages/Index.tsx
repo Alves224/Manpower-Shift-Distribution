@@ -764,124 +764,158 @@ const Index = () => {
 
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="space-y-6">
-            {/* Personnel Pools - Full Width */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Available Employees Pool */}
-              <Card className="bg-gradient-to-br from-emerald-50/90 to-green-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-emerald-200/50 dark:border-slate-700/50 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-t-lg p-3">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <Users size={16} />
-                    Available Personnel
-                    <Badge className="bg-white/20 text-white text-xs">
-                      {unassignedPool?.employees.length || 0}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <Droppable droppableId="unassigned">
-                    {(provided, snapshot) => (
-                      <div 
-                        ref={provided.innerRef} 
-                        {...provided.droppableProps} 
-                        className={`min-h-24 max-h-64 overflow-y-auto p-2 rounded-lg border-2 border-dashed transition-all ${
-                          snapshot.isDraggingOver 
-                            ? 'border-emerald-400 bg-emerald-100/50 dark:bg-emerald-950/50' 
-                            : 'border-slate-300/50 dark:border-slate-600/50'
-                        }`}
-                      >
-                        {unassignedPool?.employees.length === 0 && (
-                          <div className="text-center text-slate-400 py-4">
-                            No available personnel
-                          </div>
-                        )}
-                        {unassignedPool?.employees.map((employee, index) => (
-                          <Draggable key={employee.id} draggableId={employee.id} index={index}>
-                            {(provided, snapshot) => (
-                              <EmployeeContextMenu
-                                assignments={assignments}
-                                onAssignEmployee={(targetAssignmentId) => handleContextMenuAssign(employee.id, targetAssignmentId)}
-                                currentAssignmentId="unassigned"
-                              >
-                                <div 
-                                  ref={provided.innerRef} 
-                                  {...provided.draggableProps} 
-                                  {...provided.dragHandleProps} 
-                                  className={`p-2 mb-2 bg-white/90 dark:bg-slate-700/90 rounded-lg border shadow-sm cursor-move transition-all hover:shadow-md ${
-                                    snapshot.isDragging ? 'rotate-1 shadow-lg scale-105' : ''
-                                  }`}
+            {/* Top Section: Personnel Pools (Left) and Notes (Right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Personnel Pools - Left Side (2/3 width) */}
+              <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Available Employees Pool */}
+                <Card className="bg-gradient-to-br from-emerald-50/90 to-green-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-emerald-200/50 dark:border-slate-700/50 shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-t-lg p-3">
+                    <CardTitle className="flex items-center gap-2 text-sm">
+                      <Users size={16} />
+                      Available Personnel
+                      <Badge className="bg-white/20 text-white text-xs">
+                        {unassignedPool?.employees.length || 0}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3">
+                    <Droppable droppableId="unassigned">
+                      {(provided, snapshot) => (
+                        <div 
+                          ref={provided.innerRef} 
+                          {...provided.droppableProps} 
+                          className={`min-h-24 max-h-64 overflow-y-auto p-2 rounded-lg border-2 border-dashed transition-all ${
+                            snapshot.isDraggingOver 
+                              ? 'border-emerald-400 bg-emerald-100/50 dark:bg-emerald-950/50' 
+                              : 'border-slate-300/50 dark:border-slate-600/50'
+                          }`}
+                        >
+                          {unassignedPool?.employees.length === 0 && (
+                            <div className="text-center text-slate-400 py-4">
+                              No available personnel
+                            </div>
+                          )}
+                          {unassignedPool?.employees.map((employee, index) => (
+                            <Draggable key={employee.id} draggableId={employee.id} index={index}>
+                              {(provided, snapshot) => (
+                                <EmployeeContextMenu
+                                  assignments={assignments}
+                                  onAssignEmployee={(targetAssignmentId) => handleContextMenuAssign(employee.id, targetAssignmentId)}
+                                  currentAssignmentId="unassigned"
                                 >
-                                  <div className="flex items-center gap-2">
-                                    <Avatar className="h-6 w-6 border">
-                                      <AvatarImage src={employee.image} alt={employee.name} />
-                                      <AvatarFallback className="text-xs">
-                                        {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="font-medium text-xs truncate">{employee.name}</div>
-                                      <div className="text-xs text-slate-500">#{employee.badge}</div>
+                                  <div 
+                                    ref={provided.innerRef} 
+                                    {...provided.draggableProps} 
+                                    {...provided.dragHandleProps} 
+                                    className={`p-2 mb-2 bg-white/90 dark:bg-slate-700/90 rounded-lg border shadow-sm cursor-move transition-all hover:shadow-md ${
+                                      snapshot.isDragging ? 'rotate-1 shadow-lg scale-105' : ''
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Avatar className="h-6 w-6 border">
+                                        <AvatarImage src={employee.image} alt={employee.name} />
+                                        <AvatarFallback className="text-xs">
+                                          {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-medium text-xs truncate">{employee.name}</div>
+                                        <div className="text-xs text-slate-500">#{employee.badge}</div>
+                                      </div>
+                                      <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          console.log('Delete employee clicked:', employee.id);
+                                          removeEmployee(employee.id);
+                                        }} 
+                                        className="h-5 w-5 p-0 text-red-500 hover:bg-red-100"
+                                      >
+                                        <Trash2 size={10} />
+                                      </Button>
                                     </div>
-                                    <Button 
-                                      size="sm" 
-                                      variant="ghost" 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        console.log('Delete employee clicked:', employee.id);
-                                        removeEmployee(employee.id);
-                                      }} 
-                                      className="h-5 w-5 p-0 text-red-500 hover:bg-red-100"
-                                    >
-                                      <Trash2 size={10} />
-                                    </Button>
                                   </div>
-                                </div>
-                              </EmployeeContextMenu>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </CardContent>
-              </Card>
+                                </EmployeeContextMenu>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </CardContent>
+                </Card>
 
-              {/* Unavailable Personnel Pool */}
-              <Card className="bg-gradient-to-br from-red-50/90 to-orange-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-red-200/50 dark:border-slate-700/50 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-t-lg p-3">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <UserMinus size={16} />
-                    Unavailable
-                    <Badge className="bg-white/20 text-white text-xs">
-                      {unavailablePool?.employees.length || 0}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <div className="min-h-16 max-h-32 overflow-y-auto p-2 rounded-lg border-2 border-dashed border-slate-300/50 bg-slate-50/50 dark:bg-slate-800/50">
-                    {unavailablePool?.employees.length === 0 && (
-                      <div className="text-center text-slate-400 py-2 text-xs">
-                        No unavailable personnel
-                      </div>
-                    )}
-                    {unavailablePool?.employees.map(employee => (
-                      <div key={employee.id} className="p-2 mb-1 bg-white/50 dark:bg-slate-700/50 rounded opacity-75">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-5 w-5">
-                            <AvatarImage src={employee.image} alt={employee.name} />
-                            <AvatarFallback className="text-xs">
-                              {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-xs truncate">{employee.name}</div>
+                {/* Unavailable Personnel Pool */}
+                <Card className="bg-gradient-to-br from-red-50/90 to-orange-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-red-200/50 dark:border-slate-700/50 shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-t-lg p-3">
+                    <CardTitle className="flex items-center gap-2 text-sm">
+                      <UserMinus size={16} />
+                      Unavailable
+                      <Badge className="bg-white/20 text-white text-xs">
+                        {unavailablePool?.employees.length || 0}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3">
+                    <div className="min-h-16 max-h-32 overflow-y-auto p-2 rounded-lg border-2 border-dashed border-slate-300/50 bg-slate-50/50 dark:bg-slate-800/50">
+                      {unavailablePool?.employees.length === 0 && (
+                        <div className="text-center text-slate-400 py-2 text-xs">
+                          No unavailable personnel
+                        </div>
+                      )}
+                      {unavailablePool?.employees.map(employee => (
+                        <div key={employee.id} className="p-2 mb-1 bg-white/50 dark:bg-slate-700/50 rounded opacity-75">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={employee.image} alt={employee.name} />
+                              <AvatarFallback className="text-xs">
+                                {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-xs truncate">{employee.name}</div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Quick Notes Section - Right Side (1/3 width) */}
+              <div className="lg:col-span-1">
+                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/20 shadow-lg h-full">
+                  <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-lg p-3">
+                    <CardTitle className="flex items-center gap-2 text-sm">
+                      <FileText size={16} />
+                      Quick Notes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 h-full">
+                    <div className="space-y-2">
+                      {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => (
+                        <Button
+                          key={areaCode}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start text-xs h-8"
+                          onClick={() => {
+                            // This will open the specific area notes
+                            console.log(`Opening notes for ${areaData.name}`);
+                          }}
+                        >
+                          <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${areaData.color} mr-2`} />
+                          {areaData.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
 
             {/* Security Gates by Area - Each Area Stacked Vertically */}
@@ -911,14 +945,6 @@ const Index = () => {
                     ))}
                   </div>
                 </div>
-                
-                {/* Area Notes Manager */}
-                <AreaNotesManager 
-                  areaCode={areaCode}
-                  areaName={areaData.name}
-                  currentUser={supervisor || coordinator || currentShiftEmployees[0]}
-                  employees={currentShiftEmployees}
-                />
               </div>
             ))}
 
