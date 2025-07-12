@@ -208,6 +208,7 @@ const Index = () => {
           }
         }
       });
+      console.log('Loaded area notes:', notesData);
       setAreaNotesData(notesData);
     };
 
@@ -216,12 +217,25 @@ const Index = () => {
     // Listen for storage changes to update notes in real-time
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key?.startsWith('area-notes-')) {
+        console.log('Storage changed, reloading notes');
         loadAreaNotes();
       }
     };
     
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom events when notes are saved
+    const handleNotesUpdate = () => {
+      console.log('Notes updated event received');
+      loadAreaNotes();
+    };
+    
+    window.addEventListener('notesUpdated', handleNotesUpdate);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('notesUpdated', handleNotesUpdate);
+    };
   }, []);
 
   // Initialize assignments with categorized gates
@@ -919,37 +933,37 @@ const Index = () => {
 
               {/* Enhanced Quick Notes Section - Right Side (1/3 width) */}
               <div className="lg:col-span-1">
-                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/20 shadow-lg h-full">
-                  <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-lg p-3">
-                    <CardTitle className="flex items-center gap-2 text-sm">
-                      <FileText size={16} />
+                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/20 shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-lg p-2">
+                    <CardTitle className="flex items-center gap-2 text-xs">
+                      <FileText size={14} />
                       Quick Notes
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="ml-auto text-white hover:bg-white/20 h-6 px-2"
+                        className="ml-auto text-white hover:bg-white/20 h-5 px-1"
                         onClick={() => setShowNotesManager(true)}
                       >
-                        <Settings size={12} />
+                        <Settings size={10} />
                       </Button>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-3 h-full max-h-96 overflow-y-auto">
-                    <div className="space-y-3">
+                  <CardContent className="p-2 max-h-80 overflow-y-auto">
+                    <div className="space-y-2">
                       {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => {
                         const areaNotesInfo = areaNotesData[areaCode];
                         const hasNotes = areaNotesInfo && (
-                          areaNotesInfo.notes?.trim() || 
+                          (areaNotesInfo.notes && areaNotesInfo.notes.trim()) || 
                           (areaNotesInfo.todos && areaNotesInfo.todos.length > 0)
                         );
 
                         return (
-                          <div key={areaCode} className="border rounded-lg p-2 bg-white/50 dark:bg-slate-800/50">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${areaData.color}`} />
+                          <div key={areaCode} className="border rounded-md p-2 bg-white/50 dark:bg-slate-800/50">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${areaData.color}`} />
                               <span className="font-medium text-xs">{areaData.name}</span>
                               {hasNotes && (
-                                <Badge variant="secondary" className="text-xs h-4 px-1">
+                                <Badge variant="secondary" className="text-xs h-3 px-1">
                                   {areaNotesInfo.todos?.length || 0}
                                 </Badge>
                               )}
@@ -957,25 +971,25 @@ const Index = () => {
                             
                             {hasNotes ? (
                               <div className="space-y-1">
-                                {areaNotesInfo.notes?.trim() && (
-                                  <div className="text-xs text-slate-600 dark:text-slate-400 bg-blue-50 dark:bg-blue-950/30 p-1 rounded">
-                                    <div className="line-clamp-2">{areaNotesInfo.notes}</div>
+                                {areaNotesInfo.notes && areaNotesInfo.notes.trim() && (
+                                  <div className="text-xs text-slate-600 dark:text-slate-400 bg-blue-50 dark:bg-blue-950/30 p-1 rounded text-wrap">
+                                    <div className="line-clamp-2 break-words">{areaNotesInfo.notes}</div>
                                   </div>
                                 )}
                                 
                                 {areaNotesInfo.todos && areaNotesInfo.todos.length > 0 && (
                                   <div className="space-y-1">
                                     {areaNotesInfo.todos.slice(0, 2).map((todo: any, index: number) => (
-                                      <div key={index} className="flex items-center gap-1 text-xs">
-                                        <div className={`w-1.5 h-1.5 rounded-full ${todo.completed ? 'bg-green-500' : 'bg-orange-500'}`} />
-                                        <span className={`line-clamp-1 ${todo.completed ? 'line-through text-slate-400' : 'text-slate-600 dark:text-slate-300'}`}>
+                                      <div key={index} className="flex items-start gap-1 text-xs">
+                                        <div className={`w-1 h-1 rounded-full mt-1 flex-shrink-0 ${todo.completed ? 'bg-green-500' : 'bg-orange-500'}`} />
+                                        <span className={`line-clamp-1 break-words ${todo.completed ? 'line-through text-slate-400' : 'text-slate-600 dark:text-slate-300'}`}>
                                           {todo.text}
                                         </span>
                                       </div>
                                     ))}
                                     {areaNotesInfo.todos.length > 2 && (
-                                      <div className="text-xs text-slate-400">
-                                        +{areaNotesInfo.todos.length - 2} more
+                                      <div className="text-xs text-slate-400 pl-2">
+                                        +{areaNotesInfo.todos.length - 2} more tasks
                                       </div>
                                     )}
                                   </div>
@@ -987,6 +1001,14 @@ const Index = () => {
                           </div>
                         );
                       })}
+                      
+                      {Object.keys(areaNotesData).length === 0 && (
+                        <div className="text-center text-slate-400 py-4 text-xs">
+                          <FileText size={16} className="mx-auto mb-1 opacity-50" />
+                          No notes saved yet
+                          <div className="text-xs mt-1">Click "Notes & Planning" to add notes</div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
