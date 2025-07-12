@@ -16,6 +16,9 @@ import ManpowerDescription from '@/components/ManpowerDescription';
 import AreaNotesManager from '@/components/AreaNotesManager';
 import ComprehensiveDescriptionManager from '@/components/ComprehensiveDescriptionManager';
 import EmployeeContextMenu from '@/components/EmployeeContextMenu';
+import NotificationCenter from '@/components/NotificationCenter';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import { useNotificationStore } from '@/hooks/useNotificationStore';
 
 interface Assignment {
   id: string;
@@ -178,11 +181,52 @@ const Index = () => {
   const [supervisorAssignments, setSupervisorAssignments] = useState<Record<string, string | null>>({});
   const [coordinatorAssignments, setCoordinatorAssignments] = useState<Record<string, string | null>>({});
   const [areaNotesData, setAreaNotesData] = useState<Record<string, any>>({});
+  
+  // Loading states for better visual feedback
+  const [isDragging, setIsDragging] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
 
-  // Initialize employees with sample data
+  const { addNotification } = useNotificationStore();
+
+  // Enhanced notification helper
+  const showEnhancedNotification = (
+    type: 'success' | 'error' | 'warning' | 'info',
+    title: string,
+    description?: string,
+    action?: { label: string; onClick: () => void }
+  ) => {
+    addNotification({ type, title, description, action });
+    // Also show toast for immediate feedback
+    toast[type](title);
+  };
+
+  // Set loading state helper
+  const setLoading = (key: string, isLoading: boolean) => {
+    setLoadingStates(prev => ({ ...prev, [key]: isLoading }));
+  };
+
+  // Initialize employees with loading feedback
   useEffect(() => {
     console.log('Initializing employees with sample data...');
-    setEmployees(EXAMPLE_EMPLOYEES);
+    setLoading('employees', true);
+    
+    // Simulate loading delay for better UX feedback
+    setTimeout(() => {
+      setEmployees(EXAMPLE_EMPLOYEES);
+      setLoading('employees', false);
+      setIsInitializing(false);
+      
+      showEnhancedNotification(
+        'success',
+        'System Initialized',
+        `Loaded ${EXAMPLE_EMPLOYEES.length} employees successfully`,
+        {
+          label: 'View Details',
+          onClick: () => console.log('Show employee details')
+        }
+      );
+    }, 1000);
   }, []);
 
   // Toggle dark mode
@@ -365,55 +409,97 @@ const Index = () => {
 
   const addEmployee = (employee: EmployeeProfile) => {
     console.log('Adding new employee:', employee.name);
-    const newEmployee = { ...employee, id: `emp-${Date.now()}` };
-    setEmployees(prev => [...prev, newEmployee]);
-    toast.success(`${employee.name} added successfully!`);
-    setShowProfileForm(false);
+    setLoading('addEmployee', true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      const newEmployee = { ...employee, id: `emp-${Date.now()}` };
+      setEmployees(prev => [...prev, newEmployee]);
+      setLoading('addEmployee', false);
+      
+      showEnhancedNotification(
+        'success',
+        'Employee Added',
+        `${employee.name} has been successfully added to ${employee.shift}`,
+        {
+          label: 'Assign Now',
+          onClick: () => console.log('Quick assign employee')
+        }
+      );
+      
+      setShowProfileForm(false);
+    }, 800);
   };
 
   const removeEmployee = (employeeId: string) => {
+    const employee = employees.find(emp => emp.id === employeeId);
+    if (!employee) return;
+
     console.log('Removing employee:', employeeId);
-    setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
-    setAssignments(prev => prev.map(assignment => ({
-      ...assignment,
-      employees: assignment.employees.filter(emp => emp.id !== employeeId)
-    })));
+    setLoading(`remove-${employeeId}`, true);
     
-    setSupervisorAssignments(prev => {
-      const updated = { ...prev };
-      Object.keys(updated).forEach(shift => {
-        if (updated[shift] === employeeId) {
-          updated[shift] = null;
-        }
+    setTimeout(() => {
+      setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
+      setAssignments(prev => prev.map(assignment => ({
+        ...assignment,
+        employees: assignment.employees.filter(emp => emp.id !== employeeId)
+      })));
+      
+      setSupervisorAssignments(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(shift => {
+          if (updated[shift] === employeeId) {
+            updated[shift] = null;
+          }
+        });
+        return updated;
       });
-      return updated;
-    });
-    
-    setCoordinatorAssignments(prev => {
-      const updated = { ...prev };
-      Object.keys(updated).forEach(shift => {
-        if (updated[shift] === employeeId) {
-          updated[shift] = null;
-        }
+      
+      setCoordinatorAssignments(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(shift => {
+          if (updated[shift] === employeeId) {
+            updated[shift] = null;
+          }
+        });
+        return updated;
       });
-      return updated;
-    });
-    
-    toast.success('Employee removed');
+      
+      setLoading(`remove-${employeeId}`, false);
+      
+      showEnhancedNotification(
+        'warning',
+        'Employee Removed',
+        `${employee.name} has been removed from the system`
+      );
+    }, 500);
   };
 
   const toggleWeapon = (assignmentId: string) => {
     console.log('Toggling weapon for assignment:', assignmentId);
+    const assignment = assignments.find(a => a.id === assignmentId);
+    
     setAssignments(prev => prev.map(assignment => 
       assignment.id === assignmentId 
         ? { ...assignment, weaponAssigned: !assignment.weaponAssigned }
         : assignment
     ));
-    toast.success('Weapon status updated');
+    
+    showEnhancedNotification(
+      'info',
+      'Weapon Status Updated',
+      `${assignment?.name}: ${assignment?.weaponAssigned ? 'Weapon removed' : 'Weapon assigned'}`,
+      {
+        label: 'View Assignment',
+        onClick: () => console.log('Navigate to assignment details')
+      }
+    );
   };
 
   const onDragEnd = (result: any) => {
     const { destination, source, draggableId } = result;
+    
+    setIsDragging(false);
     
     console.log('Drag end:', { destination, source, draggableId });
     
@@ -429,40 +515,67 @@ const Index = () => {
 
     // Prevent dragging to unavailable personnel directly
     if (destination.droppableId === 'unavailable') {
-      toast.error('Employees automatically become unavailable when assigned to Training, Vacation, Assignment, or M-Time');
+      showEnhancedNotification(
+        'error',
+        'Assignment Not Allowed',
+        'Employees automatically become unavailable when assigned to Training, Vacation, Assignment, or M-Time'
+      );
       return;
     }
 
     // Check capacity
     if (destAssignment.employees.length >= destAssignment.maxCapacity && destination.droppableId !== source.droppableId) {
-      toast.error(`${destAssignment.name} is at maximum capacity`);
+      showEnhancedNotification(
+        'warning',
+        'Capacity Exceeded',
+        `${destAssignment.name} is at maximum capacity (${destAssignment.maxCapacity}/${destAssignment.maxCapacity})`
+      );
       return;
     }
 
     const draggedEmployee = sourceAssignment.employees.find(emp => emp.id === draggableId);
     if (!draggedEmployee) return;
 
-    setAssignments(prev => {
-      return prev.map(assignment => {
-        if (assignment.id === source.droppableId) {
-          return {
-            ...assignment,
-            employees: assignment.employees.filter(emp => emp.id !== draggableId)
-          };
-        }
-        if (assignment.id === destination.droppableId) {
-          const newEmployees = [...assignment.employees];
-          newEmployees.splice(destination.index, 0, draggedEmployee);
-          return {
-            ...assignment,
-            employees: newEmployees
-          };
-        }
-        return assignment;
-      });
-    });
+    // Show loading feedback during assignment
+    setLoading(`assign-${draggableId}`, true);
 
-    toast.success(`${draggedEmployee.name} assigned to ${destAssignment.name}`);
+    setTimeout(() => {
+      setAssignments(prev => {
+        return prev.map(assignment => {
+          if (assignment.id === source.droppableId) {
+            return {
+              ...assignment,
+              employees: assignment.employees.filter(emp => emp.id !== draggableId)
+            };
+          }
+          if (assignment.id === destination.droppableId) {
+            const newEmployees = [...assignment.employees];
+            newEmployees.splice(destination.index, 0, draggedEmployee);
+            return {
+              ...assignment,
+              employees: newEmployees
+            };
+          }
+          return assignment;
+        });
+      });
+
+      setLoading(`assign-${draggableId}`, false);
+
+      showEnhancedNotification(
+        'success',
+        'Assignment Completed',
+        `${draggedEmployee.name} assigned to ${destAssignment.name}`,
+        {
+          label: 'View Assignment',
+          onClick: () => console.log('Navigate to assignment details')
+        }
+      );
+    }, 600);
+  };
+
+  const onDragStart = () => {
+    setIsDragging(true);
   };
 
   const getRoleColor = (role: string) => {
@@ -517,7 +630,11 @@ const Index = () => {
     // Check capacity
     if (targetAssignment.employees.length >= targetAssignment.maxCapacity && 
         targetAssignmentId !== sourceAssignment.id) {
-      toast.error(`${targetAssignment.name} is at maximum capacity`);
+      showEnhancedNotification(
+        'warning',
+        'Capacity Exceeded',
+        `${targetAssignment.name} is at maximum capacity`
+      );
       return;
     }
 
@@ -530,7 +647,11 @@ const Index = () => {
 
     // Prevent moving to unavailable directly
     if (targetAssignmentId === 'unavailable') {
-      toast.error('Employees automatically become unavailable when assigned to Training, Vacation, Assignment, or M-Time');
+      showEnhancedNotification(
+        'error',
+        'Assignment Not Allowed',
+        'Employees automatically become unavailable when assigned to Training, Vacation, Assignment, or M-Time'
+      );
       return;
     }
 
@@ -553,7 +674,15 @@ const Index = () => {
       });
     });
 
-    toast.success(`${employee.name} assigned to ${targetAssignment.name}`);
+    showEnhancedNotification(
+      'success',
+      'Assignment Completed',
+      `${employee.name} assigned to ${targetAssignment.name}`,
+      {
+        label: 'View Assignment',
+        onClick: () => console.log('Navigate to assignment details')
+      }
+    );
   };
 
   // Calculate derived values
@@ -588,10 +717,20 @@ const Index = () => {
     areaNotesData
   });
 
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-slate-200 dark:from-slate-950 dark:via-gray-900 dark:to-slate-900 flex items-center justify-center">
+        <LoadingOverlay isLoading={true} message="Initializing Security Control Center...">
+          <div className="w-96 h-64" />
+        </LoadingOverlay>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-slate-200 dark:from-slate-950 dark:via-gray-900 dark:to-slate-900">
       <div className="container mx-auto p-4 space-y-6">
-        {/* Modern Header */}
+        {/* Modern Header with enhanced notifications */}
         <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/20 dark:border-slate-700/20">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-4">
@@ -607,24 +746,26 @@ const Index = () => {
             </div>
             
             <div className="flex items-center gap-3">
-              <Button 
-                onClick={() => {
-                  console.log('Add Employee button clicked');
-                  setShowProfileForm(true);
-                }} 
-                className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-md" 
-                size="sm"
-              >
-                <UserPlus size={16} className="mr-2" />
-                Add Employee
-              </Button>
+              <LoadingOverlay isLoading={loadingStates.addEmployee} message="Adding employee...">
+                <Button 
+                  onClick={() => {
+                    console.log('Add Employee button clicked');
+                    setShowProfileForm(true);
+                  }} 
+                  className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-md transition-all hover:scale-105" 
+                  size="sm"
+                >
+                  <UserPlus size={16} className="mr-2" />
+                  Add Employee
+                </Button>
+              </LoadingOverlay>
               
               <Button 
                 onClick={() => {
                   console.log('Notes & Planning button clicked');
                   setShowNotesManager(true);
                 }} 
-                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md" 
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md transition-all hover:scale-105" 
                 size="sm"
               >
                 <FileText size={16} className="mr-2" />
@@ -636,12 +777,14 @@ const Index = () => {
                   console.log('Description Manager button clicked');
                   setShowDescriptionManager(true);
                 }} 
-                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-md" 
+                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-md transition-all hover:scale-105" 
                 size="sm"
               >
                 <BarChart3 size={16} className="mr-2" />
                 Description Manager
               </Button>
+
+              <NotificationCenter />
               
               <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 p-2 rounded-lg">
                 <Sun className="h-4 w-4" />
@@ -650,6 +793,11 @@ const Index = () => {
                   onCheckedChange={(checked) => {
                     console.log('Dark mode toggled:', checked);
                     setDarkMode(checked);
+                    showEnhancedNotification(
+                      'info',
+                      `${checked ? 'Dark' : 'Light'} Mode Enabled`,
+                      `Switched to ${checked ? 'dark' : 'light'} theme`
+                    );
                   }} 
                 />
                 <Moon className="h-4 w-4" />
@@ -657,9 +805,9 @@ const Index = () => {
             </div>
           </div>
           
-          {/* Compact Stats Cards */}
+          {/* Enhanced Stats Cards with hover effects */}
           <div className="grid grid-cols-4 gap-3">
-            <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-3 rounded-lg shadow-sm">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-3 rounded-lg shadow-sm transition-all hover:shadow-md hover:scale-105 cursor-pointer">
               <div className="flex items-center gap-2">
                 <Users size={18} />
                 <div>
@@ -669,7 +817,7 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-3 rounded-lg shadow-sm">
+            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-3 rounded-lg shadow-sm transition-all hover:shadow-md hover:scale-105 cursor-pointer">
               <div className="flex items-center gap-2">
                 <MapPin size={18} />
                 <div>
@@ -679,7 +827,7 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-lg shadow-sm">
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-lg shadow-sm transition-all hover:shadow-md hover:scale-105 cursor-pointer">
               <div className="flex items-center gap-2">
                 <Car size={18} />
                 <div>
@@ -689,7 +837,7 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-3 rounded-lg shadow-sm">
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-3 rounded-lg shadow-sm transition-all hover:shadow-md hover:scale-105 cursor-pointer">
               <div className="flex items-center gap-2">
                 <Activity size={18} />
                 <div>
@@ -752,7 +900,7 @@ const Index = () => {
           />
         )}
 
-        {/* Shift Selector */}
+        {/* Shift Selector with loading feedback */}
         <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-center gap-4">
@@ -767,11 +915,20 @@ const Index = () => {
                   onClick={() => {
                     console.log('Shift changed to:', shift);
                     setCurrentShift(shift);
+                    showEnhancedNotification(
+                      'info',
+                      'Shift Changed',
+                      `Switched to ${shift}`,
+                      {
+                        label: 'View Personnel',
+                        onClick: () => console.log('Navigate to personnel view')
+                      }
+                    );
                   }}
-                  className={currentShift === shift 
+                  className={`transition-all hover:scale-105 ${currentShift === shift 
                     ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-md' 
                     : 'border-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }
+                  }`}
                   size="sm"
                 >
                   {shift}
@@ -815,229 +972,236 @@ const Index = () => {
           darkMode={darkMode} 
         />
 
-        <DragDropContext onDragEnd={onDragEnd}>
+        <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
           <div className="space-y-6">
-            {/* Personnel Pools - Full Width */}
+            {/* Enhanced drag feedback overlay */}
+            {isDragging && (
+              <div className="fixed inset-0 bg-blue-500/10 backdrop-blur-sm z-40 pointer-events-none transition-all duration-200" />
+            )}
+
+            {/* Personnel Pools with loading states */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Available Employees Pool */}
-              <Card className="bg-gradient-to-br from-emerald-50/90 to-green-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-emerald-200/50 dark:border-slate-700/50 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-t-lg p-3">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <Users size={16} />
-                    Available Personnel
-                    <Badge className="bg-white/20 text-white text-xs">
-                      {unassignedPool?.employees.length || 0}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <Droppable droppableId="unassigned">
-                    {(provided, snapshot) => (
-                      <div 
-                        ref={provided.innerRef} 
-                        {...provided.droppableProps} 
-                        className={`min-h-24 max-h-64 overflow-y-auto p-2 rounded-lg border-2 border-dashed transition-all ${
-                          snapshot.isDraggingOver 
-                            ? 'border-emerald-400 bg-emerald-100/50 dark:bg-emerald-950/50' 
-                            : 'border-slate-300/50 dark:border-slate-600/50'
-                        }`}
-                      >
-                        {unassignedPool?.employees.length === 0 && (
-                          <div className="text-center text-slate-400 py-4">
-                            No available personnel
-                          </div>
-                        )}
-                        {unassignedPool?.employees.map((employee, index) => (
-                          <Draggable key={employee.id} draggableId={employee.id} index={index}>
-                            {(provided, snapshot) => (
-                              <EmployeeContextMenu
-                                assignments={assignments}
-                                onAssignEmployee={(targetAssignmentId) => handleContextMenuAssign(employee.id, targetAssignmentId)}
-                                currentAssignmentId="unassigned"
-                              >
-                                <div 
-                                  ref={provided.innerRef} 
-                                  {...provided.draggableProps} 
-                                  {...provided.dragHandleProps} 
-                                  className={`p-2 mb-2 bg-white/90 dark:bg-slate-700/90 rounded-lg border shadow-sm cursor-move transition-all hover:shadow-md ${
-                                    snapshot.isDragging ? 'rotate-1 shadow-lg scale-105' : ''
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <Avatar className="h-6 w-6 border">
-                                      <AvatarImage src={employee.image} alt={employee.name} />
-                                      <AvatarFallback className="text-xs">
-                                        {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="font-medium text-xs truncate">{employee.name}</div>
-                                      <div className="text-xs text-slate-500">#{employee.badge}</div>
-                                    </div>
-                                    <Button 
-                                      size="sm" 
-                                      variant="ghost" 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        console.log('Delete employee clicked:', employee.id);
-                                        removeEmployee(employee.id);
-                                      }} 
-                                      className="h-5 w-5 p-0 text-red-500 hover:bg-red-100"
-                                    >
-                                      <Trash2 size={10} />
-                                    </Button>
-                                  </div>
-                                </div>
-                              </EmployeeContextMenu>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </CardContent>
-              </Card>
-
-              {/* Unavailable Personnel Pool */}
-              <Card className="bg-gradient-to-br from-red-50/90 to-orange-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-red-200/50 dark:border-slate-700/50 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-t-lg p-3">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <UserMinus size={16} />
-                    Unavailable
-                    <Badge className="bg-white/20 text-white text-xs">
-                      {unavailablePool?.employees.length || 0}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <div className="min-h-16 max-h-32 overflow-y-auto p-2 rounded-lg border-2 border-dashed border-slate-300/50 bg-slate-50/50 dark:bg-slate-800/50">
-                    {unavailablePool?.employees.length === 0 && (
-                      <div className="text-center text-slate-400 py-2 text-xs">
-                        No unavailable personnel
-                      </div>
-                    )}
-                    {unavailablePool?.employees.map(employee => (
-                      <div key={employee.id} className="p-2 mb-1 bg-white/50 dark:bg-slate-700/50 rounded opacity-75">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-5 w-5">
-                            <AvatarImage src={employee.image} alt={employee.name} />
-                            <AvatarFallback className="text-xs">
-                              {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-xs truncate">{employee.name}</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Security Gates by Area - Each Area Stacked Vertically */}
-            {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => {
-              const areaNotesInfo = areaNotesData[areaCode];
-              const hasNotes = areaNotesInfo && (
-                (areaNotesInfo.notes && areaNotesInfo.notes.trim()) || 
-                (areaNotesInfo.todos && areaNotesInfo.todos.length > 0)
-              );
-
-              return (
-                <div key={areaCode} className="space-y-4">
-                  <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className={`bg-gradient-to-r ${areaData.color} p-2 rounded-lg`}>
-                        <MapPin className="text-white" size={20} />
-                      </div>
-                      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{areaData.name}</h3>
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
-                        {gateAssignmentsByArea[areaCode]?.length || 0} Gates
+              <LoadingOverlay isLoading={loadingStates.employees} message="Loading personnel...">
+                <Card className="bg-gradient-to-br from-emerald-50/90 to-green-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-emerald-200/50 dark:border-slate-700/50 shadow-lg transition-all hover:shadow-xl">
+                  <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-t-lg p-3">
+                    <CardTitle className="flex items-center gap-2 text-sm">
+                      <Users size={16} />
+                      Available Personnel
+                      <Badge className="bg-white/20 text-white text-xs">
+                        {unassignedPool?.employees.length || 0}
                       </Badge>
-                      
-                      {/* Sticky Notes Indicator */}
-                      {hasNotes && (
-                        <div className="flex items-center gap-2 ml-auto">
-                          {areaNotesInfo.notes && areaNotesInfo.notes.trim() && (
-                            <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded p-2 max-w-xs">
-                              <div className="flex items-center gap-1 mb-1">
-                                <StickyNote size={12} className="text-yellow-600 dark:text-yellow-400" />
-                                <span className="text-xs font-medium text-yellow-800 dark:text-yellow-300">Note</span>
-                              </div>
-                              <p className="text-xs text-yellow-700 dark:text-yellow-300 line-clamp-2">
-                                {areaNotesInfo.notes}
-                              </p>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3">
+                    <Droppable droppableId="unassigned">
+                      {(provided, snapshot) => (
+                        <div 
+                          ref={provided.innerRef} 
+                          {...provided.droppableProps} 
+                          className={`min-h-24 max-h-64 overflow-y-auto p-2 rounded-lg border-2 border-dashed transition-all ${
+                            snapshot.isDraggingOver 
+                              ? 'border-emerald-400 bg-emerald-100/50 dark:bg-emerald-950/50' 
+                              : 'border-slate-300/50 dark:border-slate-600/50'
+                          }`}
+                        >
+                          {unassignedPool?.employees.length === 0 && (
+                            <div className="text-center text-slate-400 py-4">
+                              No available personnel
                             </div>
                           )}
-                          
-                          {areaNotesInfo.todos && areaNotesInfo.todos.length > 0 && (
-                            <div className="bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded p-2 max-w-xs">
-                              <div className="flex items-center gap-1 mb-1">
-                                <CheckSquare size={12} className="text-blue-600 dark:text-blue-400" />
-                                <span className="text-xs font-medium text-blue-800 dark:text-blue-300">
-                                  Tasks ({areaNotesInfo.todos.filter((t: any) => !t.completed).length}/{areaNotesInfo.todos.length})
-                                </span>
-                              </div>
-                              <div className="space-y-1">
-                                {areaNotesInfo.todos.slice(0, 2).map((todo: any, index: number) => (
-                                  <div key={index} className="flex items-center gap-1">
-                                    <div className={`w-1 h-1 rounded-full ${todo.completed ? 'bg-green-500' : 'bg-orange-500'}`} />
-                                    <span className={`text-xs ${todo.completed ? 'line-through text-blue-500' : 'text-blue-700 dark:text-blue-300'} line-clamp-1`}>
-                                      {todo.text}
-                                    </span>
+                          {unassignedPool?.employees.map((employee, index) => (
+                            <Draggable key={employee.id} draggableId={employee.id} index={index}>
+                              {(provided, snapshot) => (
+                                <EmployeeContextMenu
+                                  assignments={assignments}
+                                  onAssignEmployee={(targetAssignmentId) => handleContextMenuAssign(employee.id, targetAssignmentId)}
+                                  currentAssignmentId="unassigned"
+                                >
+                                  <div 
+                                    ref={provided.innerRef} 
+                                    {...provided.draggableProps} 
+                                    {...provided.dragHandleProps} 
+                                    className={`p-2 mb-2 bg-white/90 dark:bg-slate-700/90 rounded-lg border shadow-sm cursor-move transition-all hover:shadow-md ${
+                                      snapshot.isDragging ? 'rotate-1 shadow-lg scale-105' : ''
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Avatar className="h-6 w-6 border">
+                                        <AvatarImage src={employee.image} alt={employee.name} />
+                                        <AvatarFallback className="text-xs">
+                                          {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-medium text-xs truncate">{employee.name}</div>
+                                        <div className="text-xs text-slate-500">#{employee.badge}</div>
+                                      </div>
+                                      <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          console.log('Delete employee clicked:', employee.id);
+                                          removeEmployee(employee.id);
+                                        }} 
+                                        className="h-5 w-5 p-0 text-red-500 hover:bg-red-100"
+                                      >
+                                        <Trash2 size={10} />
+                                      </Button>
+                                    </div>
                                   </div>
-                                ))}
-                                {areaNotesInfo.todos.length > 2 && (
-                                  <span className="text-xs text-blue-500 dark:text-blue-400">
-                                    +{areaNotesInfo.todos.length - 2} more
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          )}
+                                </EmployeeContextMenu>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
                         </div>
                       )}
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-                      {gateAssignmentsByArea[areaCode]?.map(assignment => (
-                        <EnhancedGateCard 
-                          key={assignment.id} 
-                          assignment={assignment} 
-                          onToggleWeapon={toggleWeapon} 
-                          getAssignmentColor={getAssignmentColor} 
-                          getRoleColor={getRoleColor}
-                          assignments={assignments}
-                          onAssignEmployee={handleContextMenuAssign}
-                        />
+                    </Droppable>
+                  </CardContent>
+                </Card>
+
+                {/* Unavailable Personnel Pool */}
+                <Card className="bg-gradient-to-br from-red-50/90 to-orange-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-red-200/50 dark:border-slate-700/50 shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-t-lg p-3">
+                    <CardTitle className="flex items-center gap-2 text-sm">
+                      <UserMinus size={16} />
+                      Unavailable
+                      <Badge className="bg-white/20 text-white text-xs">
+                        {unavailablePool?.employees.length || 0}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3">
+                    <div className="min-h-16 max-h-32 overflow-y-auto p-2 rounded-lg border-2 border-dashed border-slate-300/50 bg-slate-50/50 dark:bg-slate-800/50">
+                      {unavailablePool?.employees.length === 0 && (
+                        <div className="text-center text-slate-400 py-2 text-xs">
+                          No unavailable personnel
+                        </div>
+                      )}
+                      {unavailablePool?.employees.map(employee => (
+                        <div key={employee.id} className="p-2 mb-1 bg-white/50 dark:bg-slate-700/50 rounded opacity-75">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={employee.image} alt={employee.name} />
+                              <AvatarFallback className="text-xs">
+                                {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-xs truncate">{employee.name}</div>
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
-                  </div>
-                </div>
-              );
-            })}
+                  </CardContent>
+                </Card>
+              </LoadingOverlay>
 
-            {/* Special Assignments - Also Full Width */}
-            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
-                  <BarChart3 className="text-white" size={20} />
+              {/* Security Gates by Area - Each Area Stacked Vertically */}
+              {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => {
+                const areaNotesInfo = areaNotesData[areaCode];
+                const hasNotes = areaNotesInfo && (
+                  (areaNotesInfo.notes && areaNotesInfo.notes.trim()) || 
+                  (areaNotesInfo.todos && areaNotesInfo.todos.length > 0)
+                );
+
+                return (
+                  <div key={areaCode} className="space-y-4">
+                    <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className={`bg-gradient-to-r ${areaData.color} p-2 rounded-lg`}>
+                          <MapPin className="text-white" size={20} />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{areaData.name}</h3>
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                          {gateAssignmentsByArea[areaCode]?.length || 0} Gates
+                        </Badge>
+                        
+                        {/* Sticky Notes Indicator */}
+                        {hasNotes && (
+                          <div className="flex items-center gap-2 ml-auto">
+                            {areaNotesInfo.notes && areaNotesInfo.notes.trim() && (
+                              <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded p-2 max-w-xs">
+                                <div className="flex items-center gap-1 mb-1">
+                                  <StickyNote size={12} className="text-yellow-600 dark:text-yellow-400" />
+                                  <span className="text-xs font-medium text-yellow-800 dark:text-yellow-300">Note</span>
+                                </div>
+                                <p className="text-xs text-yellow-700 dark:text-yellow-300 line-clamp-2">
+                                  {areaNotesInfo.notes}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {areaNotesInfo.todos && areaNotesInfo.todos.length > 0 && (
+                              <div className="bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded p-2 max-w-xs">
+                                <div className="flex items-center gap-1 mb-1">
+                                  <CheckSquare size={12} className="text-blue-600 dark:text-blue-400" />
+                                  <span className="text-xs font-medium text-blue-800 dark:text-blue-300">
+                                    Tasks ({areaNotesInfo.todos.filter((t: any) => !t.completed).length}/{areaNotesInfo.todos.length})
+                                  </span>
+                                </div>
+                                <div className="space-y-1">
+                                  {areaNotesInfo.todos.slice(0, 2).map((todo: any, index: number) => (
+                                    <div key={index} className="flex items-center gap-1">
+                                      <div className={`w-1 h-1 rounded-full ${todo.completed ? 'bg-green-500' : 'bg-orange-500'}`} />
+                                      <span className={`text-xs ${todo.completed ? 'line-through text-blue-500' : 'text-blue-700 dark:text-blue-300'} line-clamp-1`}>
+                                        {todo.text}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {areaNotesInfo.todos.length > 2 && (
+                                    <span className="text-xs text-blue-500 dark:text-blue-400">
+                                      +{areaNotesInfo.todos.length - 2} more
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                        {gateAssignmentsByArea[areaCode]?.map(assignment => (
+                          <EnhancedGateCard 
+                            key={assignment.id} 
+                            assignment={assignment} 
+                            onToggleWeapon={toggleWeapon} 
+                            getAssignmentColor={getAssignmentColor} 
+                            getRoleColor={getRoleColor}
+                            assignments={assignments}
+                            onAssignEmployee={handleContextMenuAssign}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Special Assignments - Also Full Width */}
+              <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
+                    <BarChart3 className="text-white" size={20} />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Special Assignments</h3>
                 </div>
-                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Special Assignments</h3>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-                {specialAssignments.map(assignment => (
-                  <EnhancedGateCard 
-                    key={assignment.id} 
-                    assignment={assignment} 
-                    onToggleWeapon={toggleWeapon} 
-                    getAssignmentColor={getAssignmentColor} 
-                    getRoleColor={getRoleColor}
-                    assignments={assignments}
-                    onAssignEmployee={handleContextMenuAssign}
-                  />
-                ))}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                  {specialAssignments.map(assignment => (
+                    <EnhancedGateCard 
+                      key={assignment.id} 
+                      assignment={assignment} 
+                      onToggleWeapon={toggleWeapon} 
+                      getAssignmentColor={getAssignmentColor} 
+                      getRoleColor={getRoleColor}
+                      assignments={assignments}
+                      onAssignEmployee={handleContextMenuAssign}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
