@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,6 +39,9 @@ interface QuickNote {
   type: 'note' | 'todo';
   completed?: boolean;
 }
+
+// Available shifts constant
+const SHIFTS = ['SHIFT 1', 'SHIFT 2', 'SHIFT 3'];
 
 // Gate areas configuration
 const GATE_AREAS = {
