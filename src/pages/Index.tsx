@@ -763,9 +763,9 @@ const Index = () => {
         />
 
         <DragDropContext onDragEnd={onDragEnd}>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            {/* Personnel Pools */}
-            <div className="lg:col-span-1 space-y-4">
+          <div className="space-y-6">
+            {/* Personnel Pools - Full Width */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Available Employees Pool */}
               <Card className="bg-gradient-to-br from-emerald-50/90 to-green-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-emerald-200/50 dark:border-slate-700/50 shadow-lg">
                 <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-t-lg p-3">
@@ -884,67 +884,64 @@ const Index = () => {
               </Card>
             </div>
 
-            {/* Main Assignment Area */}
-            <div className="lg:col-span-3 space-y-4">
-              {/* Security Gates by Area */}
-              {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => (
-                <div key={areaCode} className="space-y-4">
-                  <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className={`bg-gradient-to-r ${areaData.color} p-2 rounded-lg`}>
-                        <MapPin className="text-white" size={20} />
-                      </div>
-                      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{areaData.name}</h3>
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
-                        {gateAssignmentsByArea[areaCode]?.length || 0} Gates
-                      </Badge>
+            {/* Security Gates by Area - Each Area Stacked Vertically */}
+            {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => (
+              <div key={areaCode} className="space-y-4">
+                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`bg-gradient-to-r ${areaData.color} p-2 rounded-lg`}>
+                      <MapPin className="text-white" size={20} />
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {gateAssignmentsByArea[areaCode]?.map(assignment => (
-                        <EnhancedGateCard 
-                          key={assignment.id} 
-                          assignment={assignment} 
-                          onToggleWeapon={toggleWeapon} 
-                          getAssignmentColor={getAssignmentColor} 
-                          getRoleColor={getRoleColor}
-                          assignments={assignments}
-                          onAssignEmployee={handleContextMenuAssign}
-                        />
-                      ))}
-                    </div>
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{areaData.name}</h3>
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                      {gateAssignmentsByArea[areaCode]?.length || 0} Gates
+                    </Badge>
                   </div>
-                  
-                  {/* Area Notes Manager */}
-                  <AreaNotesManager 
-                    areaCode={areaCode}
-                    areaName={areaData.name}
-                    currentUser={supervisor || coordinator || currentShiftEmployees[0]}
-                    employees={currentShiftEmployees}
-                  />
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                    {gateAssignmentsByArea[areaCode]?.map(assignment => (
+                      <EnhancedGateCard 
+                        key={assignment.id} 
+                        assignment={assignment} 
+                        onToggleWeapon={toggleWeapon} 
+                        getAssignmentColor={getAssignmentColor} 
+                        getRoleColor={getRoleColor}
+                        assignments={assignments}
+                        onAssignEmployee={handleContextMenuAssign}
+                      />
+                    ))}
+                  </div>
                 </div>
-              ))}
+                
+                {/* Area Notes Manager */}
+                <AreaNotesManager 
+                  areaCode={areaCode}
+                  areaName={areaData.name}
+                  currentUser={supervisor || coordinator || currentShiftEmployees[0]}
+                  employees={currentShiftEmployees}
+                />
+              </div>
+            ))}
 
-              {/* Special Assignments */}
-              <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
-                    <BarChart3 className="text-white" size={20} />
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Special Assignments</h3>
+            {/* Special Assignments - Also Full Width */}
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
+                  <BarChart3 className="text-white" size={20} />
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {specialAssignments.map(assignment => (
-                    <EnhancedGateCard 
-                      key={assignment.id} 
-                      assignment={assignment} 
-                      onToggleWeapon={toggleWeapon} 
-                      getAssignmentColor={getAssignmentColor} 
-                      getRoleColor={getRoleColor}
-                      assignments={assignments}
-                      onAssignEmployee={handleContextMenuAssign}
-                    />
-                  ))}
-                </div>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Special Assignments</h3>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                {specialAssignments.map(assignment => (
+                  <EnhancedGateCard 
+                    key={assignment.id} 
+                    assignment={assignment} 
+                    onToggleWeapon={toggleWeapon} 
+                    getAssignmentColor={getAssignmentColor} 
+                    getRoleColor={getRoleColor}
+                    assignments={assignments}
+                    onAssignEmployee={handleContextMenuAssign}
+                  />
+                ))}
               </div>
             </div>
           </div>
