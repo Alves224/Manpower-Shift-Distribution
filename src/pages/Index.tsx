@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +15,7 @@ import CommandStructureManager from '@/components/CommandStructureManager';
 import ManpowerDescription from '@/components/ManpowerDescription';
 import AreaNotesManager from '@/components/AreaNotesManager';
 import ComprehensiveDescriptionManager from '@/components/ComprehensiveDescriptionManager';
+import EmployeeContextMenu from '@/components/EmployeeContextMenu';
 
 interface Assignment {
   id: string;
@@ -447,6 +447,63 @@ const Index = () => {
     setCoordinatorAssignments(prev => ({ ...prev, [currentShift]: employeeId }));
   };
 
+  const handleContextMenuAssign = (employeeId: string, targetAssignmentId: string) => {
+    console.log('Context menu assign:', { employeeId, targetAssignmentId });
+    
+    // Find source assignment
+    const sourceAssignment = assignments.find(a => 
+      a.employees.some(emp => emp.id === employeeId)
+    );
+    
+    const targetAssignment = assignments.find(a => a.id === targetAssignmentId);
+    
+    if (!sourceAssignment || !targetAssignment) {
+      console.error('Assignment not found');
+      return;
+    }
+
+    // Check capacity
+    if (targetAssignment.employees.length >= targetAssignment.maxCapacity && 
+        targetAssignmentId !== sourceAssignment.id) {
+      toast.error(`${targetAssignment.name} is at maximum capacity`);
+      return;
+    }
+
+    // Find the employee
+    const employee = sourceAssignment.employees.find(emp => emp.id === employeeId);
+    if (!employee) {
+      console.error('Employee not found');
+      return;
+    }
+
+    // Prevent moving to unavailable directly
+    if (targetAssignmentId === 'unavailable') {
+      toast.error('Employees automatically become unavailable when assigned to Training, Vacation, Assignment, or M-Time');
+      return;
+    }
+
+    // Update assignments
+    setAssignments(prev => {
+      return prev.map(assignment => {
+        if (assignment.id === sourceAssignment.id) {
+          return {
+            ...assignment,
+            employees: assignment.employees.filter(emp => emp.id !== employeeId)
+          };
+        }
+        if (assignment.id === targetAssignmentId) {
+          return {
+            ...assignment,
+            employees: [...assignment.employees, employee]
+          };
+        }
+        return assignment;
+      });
+    });
+
+    toast.success(`${employee.name} assigned to ${targetAssignment.name}`);
+  };
+
   // Calculate derived values
   const currentShiftEmployees = employees.filter(emp => emp.shift === currentShift);
   const supervisor = supervisorAssignments[currentShift] 
@@ -740,39 +797,45 @@ const Index = () => {
                         {unassignedPool?.employees.map((employee, index) => (
                           <Draggable key={employee.id} draggableId={employee.id} index={index}>
                             {(provided, snapshot) => (
-                              <div 
-                                ref={provided.innerRef} 
-                                {...provided.draggableProps} 
-                                {...provided.dragHandleProps} 
-                                className={`p-2 mb-2 bg-white/90 dark:bg-slate-700/90 rounded-lg border shadow-sm cursor-move transition-all hover:shadow-md ${
-                                  snapshot.isDragging ? 'rotate-1 shadow-lg scale-105' : ''
-                                }`}
+                              <EmployeeContextMenu
+                                assignments={assignments}
+                                onAssignEmployee={(targetAssignmentId) => handleContextMenuAssign(employee.id, targetAssignmentId)}
+                                currentAssignmentId="unassigned"
                               >
-                                <div className="flex items-center gap-2">
-                                  <Avatar className="h-6 w-6 border">
-                                    <AvatarImage src={employee.image} alt={employee.name} />
-                                    <AvatarFallback className="text-xs">
-                                      {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-medium text-xs truncate">{employee.name}</div>
-                                    <div className="text-xs text-slate-500">#{employee.badge}</div>
+                                <div 
+                                  ref={provided.innerRef} 
+                                  {...provided.draggableProps} 
+                                  {...provided.dragHandleProps} 
+                                  className={`p-2 mb-2 bg-white/90 dark:bg-slate-700/90 rounded-lg border shadow-sm cursor-move transition-all hover:shadow-md ${
+                                    snapshot.isDragging ? 'rotate-1 shadow-lg scale-105' : ''
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="h-6 w-6 border">
+                                      <AvatarImage src={employee.image} alt={employee.name} />
+                                      <AvatarFallback className="text-xs">
+                                        {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium text-xs truncate">{employee.name}</div>
+                                      <div className="text-xs text-slate-500">#{employee.badge}</div>
+                                    </div>
+                                    <Button 
+                                      size="sm" 
+                                      variant="ghost" 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        console.log('Delete employee clicked:', employee.id);
+                                        removeEmployee(employee.id);
+                                      }} 
+                                      className="h-5 w-5 p-0 text-red-500 hover:bg-red-100"
+                                    >
+                                      <Trash2 size={10} />
+                                    </Button>
                                   </div>
-                                  <Button 
-                                    size="sm" 
-                                    variant="ghost" 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      console.log('Delete employee clicked:', employee.id);
-                                      removeEmployee(employee.id);
-                                    }} 
-                                    className="h-5 w-5 p-0 text-red-500 hover:bg-red-100"
-                                  >
-                                    <Trash2 size={10} />
-                                  </Button>
                                 </div>
-                              </div>
+                              </EmployeeContextMenu>
                             )}
                           </Draggable>
                         ))}
@@ -843,7 +906,9 @@ const Index = () => {
                           assignment={assignment} 
                           onToggleWeapon={toggleWeapon} 
                           getAssignmentColor={getAssignmentColor} 
-                          getRoleColor={getRoleColor} 
+                          getRoleColor={getRoleColor}
+                          assignments={assignments}
+                          onAssignEmployee={handleContextMenuAssign}
                         />
                       ))}
                     </div>
@@ -874,7 +939,9 @@ const Index = () => {
                       assignment={assignment} 
                       onToggleWeapon={toggleWeapon} 
                       getAssignmentColor={getAssignmentColor} 
-                      getRoleColor={getRoleColor} 
+                      getRoleColor={getRoleColor}
+                      assignments={assignments}
+                      onAssignEmployee={handleContextMenuAssign}
                     />
                   ))}
                 </div>
