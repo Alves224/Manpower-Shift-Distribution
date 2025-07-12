@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Plus, Users, Shield, Car, Clock, UserPlus, Trash2, Moon, Sun, Settings, Zap, Activity, BarChart3, UserMinus, MapPin, FileText } from 'lucide-react';
+import { Plus, Users, Shield, Car, Clock, UserPlus, Trash2, Moon, Sun, Settings, Zap, Activity, BarChart3, UserMinus, MapPin, FileText, StickyNote, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import EmployeeProfileForm, { EmployeeProfile } from '@/components/EmployeeProfileForm';
 import ShiftHierarchy from '@/components/ShiftHierarchy';
@@ -817,241 +817,206 @@ const Index = () => {
 
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="space-y-6">
-            {/* Top Section: Personnel Pools (Left) and Notes (Right) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Personnel Pools - Left Side (2/3 width) */}
-              <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Available Employees Pool */}
-                <Card className="bg-gradient-to-br from-emerald-50/90 to-green-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-emerald-200/50 dark:border-slate-700/50 shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-t-lg p-3">
-                    <CardTitle className="flex items-center gap-2 text-sm">
-                      <Users size={16} />
-                      Available Personnel
-                      <Badge className="bg-white/20 text-white text-xs">
-                        {unassignedPool?.employees.length || 0}
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3">
-                    <Droppable droppableId="unassigned">
-                      {(provided, snapshot) => (
-                        <div 
-                          ref={provided.innerRef} 
-                          {...provided.droppableProps} 
-                          className={`min-h-24 max-h-64 overflow-y-auto p-2 rounded-lg border-2 border-dashed transition-all ${
-                            snapshot.isDraggingOver 
-                              ? 'border-emerald-400 bg-emerald-100/50 dark:bg-emerald-950/50' 
-                              : 'border-slate-300/50 dark:border-slate-600/50'
-                          }`}
-                        >
-                          {unassignedPool?.employees.length === 0 && (
-                            <div className="text-center text-slate-400 py-4">
-                              No available personnel
-                            </div>
-                          )}
-                          {unassignedPool?.employees.map((employee, index) => (
-                            <Draggable key={employee.id} draggableId={employee.id} index={index}>
-                              {(provided, snapshot) => (
-                                <EmployeeContextMenu
-                                  assignments={assignments}
-                                  onAssignEmployee={(targetAssignmentId) => handleContextMenuAssign(employee.id, targetAssignmentId)}
-                                  currentAssignmentId="unassigned"
-                                >
-                                  <div 
-                                    ref={provided.innerRef} 
-                                    {...provided.draggableProps} 
-                                    {...provided.dragHandleProps} 
-                                    className={`p-2 mb-2 bg-white/90 dark:bg-slate-700/90 rounded-lg border shadow-sm cursor-move transition-all hover:shadow-md ${
-                                      snapshot.isDragging ? 'rotate-1 shadow-lg scale-105' : ''
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <Avatar className="h-6 w-6 border">
-                                        <AvatarImage src={employee.image} alt={employee.name} />
-                                        <AvatarFallback className="text-xs">
-                                          {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-xs truncate">{employee.name}</div>
-                                        <div className="text-xs text-slate-500">#{employee.badge}</div>
-                                      </div>
-                                      <Button 
-                                        size="sm" 
-                                        variant="ghost" 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          console.log('Delete employee clicked:', employee.id);
-                                          removeEmployee(employee.id);
-                                        }} 
-                                        className="h-5 w-5 p-0 text-red-500 hover:bg-red-100"
-                                      >
-                                        <Trash2 size={10} />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </EmployeeContextMenu>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
-                  </CardContent>
-                </Card>
-
-                {/* Unavailable Personnel Pool */}
-                <Card className="bg-gradient-to-br from-red-50/90 to-orange-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-red-200/50 dark:border-slate-700/50 shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-t-lg p-3">
-                    <CardTitle className="flex items-center gap-2 text-sm">
-                      <UserMinus size={16} />
-                      Unavailable
-                      <Badge className="bg-white/20 text-white text-xs">
-                        {unavailablePool?.employees.length || 0}
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3">
-                    <div className="min-h-16 max-h-32 overflow-y-auto p-2 rounded-lg border-2 border-dashed border-slate-300/50 bg-slate-50/50 dark:bg-slate-800/50">
-                      {unavailablePool?.employees.length === 0 && (
-                        <div className="text-center text-slate-400 py-2 text-xs">
-                          No unavailable personnel
-                        </div>
-                      )}
-                      {unavailablePool?.employees.map(employee => (
-                        <div key={employee.id} className="p-2 mb-1 bg-white/50 dark:bg-slate-700/50 rounded opacity-75">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-5 w-5">
-                              <AvatarImage src={employee.image} alt={employee.name} />
-                              <AvatarFallback className="text-xs">
-                                {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-xs truncate">{employee.name}</div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Enhanced Quick Notes Section - Right Side (1/3 width) - Made Smaller */}
-              <div className="lg:col-span-1">
-                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/20 shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-lg p-2">
-                    <CardTitle className="flex items-center gap-2 text-xs">
-                      <FileText size={12} />
-                      Quick Notes
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="ml-auto text-white hover:bg-white/20 h-4 px-1 text-xs"
-                        onClick={() => setShowNotesManager(true)}
+            {/* Personnel Pools - Full Width */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Available Employees Pool */}
+              <Card className="bg-gradient-to-br from-emerald-50/90 to-green-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-emerald-200/50 dark:border-slate-700/50 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-t-lg p-3">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <Users size={16} />
+                    Available Personnel
+                    <Badge className="bg-white/20 text-white text-xs">
+                      {unassignedPool?.employees.length || 0}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3">
+                  <Droppable droppableId="unassigned">
+                    {(provided, snapshot) => (
+                      <div 
+                        ref={provided.innerRef} 
+                        {...provided.droppableProps} 
+                        className={`min-h-24 max-h-64 overflow-y-auto p-2 rounded-lg border-2 border-dashed transition-all ${
+                          snapshot.isDraggingOver 
+                            ? 'border-emerald-400 bg-emerald-100/50 dark:bg-emerald-950/50' 
+                            : 'border-slate-300/50 dark:border-slate-600/50'
+                        }`}
                       >
-                        <Settings size={8} />
-                      </Button>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-2 max-h-48 overflow-y-auto">
-                    <div className="space-y-1">
-                      {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => {
-                        const areaNotesInfo = areaNotesData[areaCode];
-                        const hasNotes = areaNotesInfo && (
-                          (areaNotesInfo.notes && areaNotesInfo.notes.trim()) || 
-                          (areaNotesInfo.todos && areaNotesInfo.todos.length > 0)
-                        );
-
-                        return (
-                          <div key={areaCode} className="border rounded p-1 bg-white/50 dark:bg-slate-800/50">
-                            <div className="flex items-center gap-1 mb-1">
-                              <div className={`w-1 h-1 rounded-full bg-gradient-to-r ${areaData.color}`} />
-                              <span className="font-medium text-xs">{areaData.name}</span>
-                              {hasNotes && (
-                                <Badge variant="secondary" className="text-xs h-3 px-1 text-xs">
-                                  {areaNotesInfo.todos?.length || 0}
-                                </Badge>
-                              )}
-                            </div>
-                            
-                            {hasNotes ? (
-                              <div className="space-y-1">
-                                {areaNotesInfo.notes && areaNotesInfo.notes.trim() && (
-                                  <div className="text-xs text-slate-600 dark:text-slate-400 bg-blue-50 dark:bg-blue-950/30 p-1 rounded">
-                                    <div className="line-clamp-1 break-words text-xs">{areaNotesInfo.notes}</div>
-                                  </div>
-                                )}
-                                
-                                {areaNotesInfo.todos && areaNotesInfo.todos.length > 0 && (
-                                  <div className="space-y-0.5">
-                                    {areaNotesInfo.todos.slice(0, 1).map((todo: any, index: number) => (
-                                      <div key={index} className="flex items-start gap-1 text-xs">
-                                        <div className={`w-0.5 h-0.5 rounded-full mt-1 flex-shrink-0 ${todo.completed ? 'bg-green-500' : 'bg-orange-500'}`} />
-                                        <span className={`line-clamp-1 break-words text-xs ${todo.completed ? 'line-through text-slate-400' : 'text-slate-600 dark:text-slate-300'}`}>
-                                          {todo.text}
-                                        </span>
-                                      </div>
-                                    ))}
-                                    {areaNotesInfo.todos.length > 1 && (
-                                      <div className="text-xs text-slate-400 pl-1">
-                                        +{areaNotesInfo.todos.length - 1} more
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="text-xs text-slate-400 italic">No notes yet</div>
-                            )}
+                        {unassignedPool?.employees.length === 0 && (
+                          <div className="text-center text-slate-400 py-4">
+                            No available personnel
                           </div>
-                        );
-                      })}
-                      
-                      {Object.keys(areaNotesData).length === 0 && (
-                        <div className="text-center text-slate-400 py-2 text-xs">
-                          <FileText size={12} className="mx-auto mb-1 opacity-50" />
-                          No notes saved yet
-                          <div className="text-xs mt-1">Click "Notes & Planning" to add notes</div>
+                        )}
+                        {unassignedPool?.employees.map((employee, index) => (
+                          <Draggable key={employee.id} draggableId={employee.id} index={index}>
+                            {(provided, snapshot) => (
+                              <EmployeeContextMenu
+                                assignments={assignments}
+                                onAssignEmployee={(targetAssignmentId) => handleContextMenuAssign(employee.id, targetAssignmentId)}
+                                currentAssignmentId="unassigned"
+                              >
+                                <div 
+                                  ref={provided.innerRef} 
+                                  {...provided.draggableProps} 
+                                  {...provided.dragHandleProps} 
+                                  className={`p-2 mb-2 bg-white/90 dark:bg-slate-700/90 rounded-lg border shadow-sm cursor-move transition-all hover:shadow-md ${
+                                    snapshot.isDragging ? 'rotate-1 shadow-lg scale-105' : ''
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="h-6 w-6 border">
+                                      <AvatarImage src={employee.image} alt={employee.name} />
+                                      <AvatarFallback className="text-xs">
+                                        {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium text-xs truncate">{employee.name}</div>
+                                      <div className="text-xs text-slate-500">#{employee.badge}</div>
+                                    </div>
+                                    <Button 
+                                      size="sm" 
+                                      variant="ghost" 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        console.log('Delete employee clicked:', employee.id);
+                                        removeEmployee(employee.id);
+                                      }} 
+                                      className="h-5 w-5 p-0 text-red-500 hover:bg-red-100"
+                                    >
+                                      <Trash2 size={10} />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </EmployeeContextMenu>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </CardContent>
+              </Card>
+
+              {/* Unavailable Personnel Pool */}
+              <Card className="bg-gradient-to-br from-red-50/90 to-orange-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-red-200/50 dark:border-slate-700/50 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-t-lg p-3">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <UserMinus size={16} />
+                    Unavailable
+                    <Badge className="bg-white/20 text-white text-xs">
+                      {unavailablePool?.employees.length || 0}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3">
+                  <div className="min-h-16 max-h-32 overflow-y-auto p-2 rounded-lg border-2 border-dashed border-slate-300/50 bg-slate-50/50 dark:bg-slate-800/50">
+                    {unavailablePool?.employees.length === 0 && (
+                      <div className="text-center text-slate-400 py-2 text-xs">
+                        No unavailable personnel
+                      </div>
+                    )}
+                    {unavailablePool?.employees.map(employee => (
+                      <div key={employee.id} className="p-2 mb-1 bg-white/50 dark:bg-slate-700/50 rounded opacity-75">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-5 w-5">
+                            <AvatarImage src={employee.image} alt={employee.name} />
+                            <AvatarFallback className="text-xs">
+                              {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-xs truncate">{employee.name}</div>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Security Gates by Area - Each Area Stacked Vertically */}
-            {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => (
-              <div key={areaCode} className="space-y-4">
-                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`bg-gradient-to-r ${areaData.color} p-2 rounded-lg`}>
-                      <MapPin className="text-white" size={20} />
+            {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => {
+              const areaNotesInfo = areaNotesData[areaCode];
+              const hasNotes = areaNotesInfo && (
+                (areaNotesInfo.notes && areaNotesInfo.notes.trim()) || 
+                (areaNotesInfo.todos && areaNotesInfo.todos.length > 0)
+              );
+
+              return (
+                <div key={areaCode} className="space-y-4">
+                  <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className={`bg-gradient-to-r ${areaData.color} p-2 rounded-lg`}>
+                        <MapPin className="text-white" size={20} />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{areaData.name}</h3>
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                        {gateAssignmentsByArea[areaCode]?.length || 0} Gates
+                      </Badge>
+                      
+                      {/* Sticky Notes Indicator */}
+                      {hasNotes && (
+                        <div className="flex items-center gap-2 ml-auto">
+                          {areaNotesInfo.notes && areaNotesInfo.notes.trim() && (
+                            <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded p-2 max-w-xs">
+                              <div className="flex items-center gap-1 mb-1">
+                                <StickyNote size={12} className="text-yellow-600 dark:text-yellow-400" />
+                                <span className="text-xs font-medium text-yellow-800 dark:text-yellow-300">Note</span>
+                              </div>
+                              <p className="text-xs text-yellow-700 dark:text-yellow-300 line-clamp-2">
+                                {areaNotesInfo.notes}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {areaNotesInfo.todos && areaNotesInfo.todos.length > 0 && (
+                            <div className="bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded p-2 max-w-xs">
+                              <div className="flex items-center gap-1 mb-1">
+                                <CheckSquare size={12} className="text-blue-600 dark:text-blue-400" />
+                                <span className="text-xs font-medium text-blue-800 dark:text-blue-300">
+                                  Tasks ({areaNotesInfo.todos.filter((t: any) => !t.completed).length}/{areaNotesInfo.todos.length})
+                                </span>
+                              </div>
+                              <div className="space-y-1">
+                                {areaNotesInfo.todos.slice(0, 2).map((todo: any, index: number) => (
+                                  <div key={index} className="flex items-center gap-1">
+                                    <div className={`w-1 h-1 rounded-full ${todo.completed ? 'bg-green-500' : 'bg-orange-500'}`} />
+                                    <span className={`text-xs ${todo.completed ? 'line-through text-blue-500' : 'text-blue-700 dark:text-blue-300'} line-clamp-1`}>
+                                      {todo.text}
+                                    </span>
+                                  </div>
+                                ))}
+                                {areaNotesInfo.todos.length > 2 && (
+                                  <span className="text-xs text-blue-500 dark:text-blue-400">
+                                    +{areaNotesInfo.todos.length - 2} more
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{areaData.name}</h3>
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
-                      {gateAssignmentsByArea[areaCode]?.length || 0} Gates
-                    </Badge>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-                    {gateAssignmentsByArea[areaCode]?.map(assignment => (
-                      <EnhancedGateCard 
-                        key={assignment.id} 
-                        assignment={assignment} 
-                        onToggleWeapon={toggleWeapon} 
-                        getAssignmentColor={getAssignmentColor} 
-                        getRoleColor={getRoleColor}
-                        assignments={assignments}
-                        onAssignEmployee={handleContextMenuAssign}
-                      />
-                    ))}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                      {gateAssignmentsByArea[areaCode]?.map(assignment => (
+                        <EnhancedGateCard 
+                          key={assignment.id} 
+                          assignment={assignment} 
+                          onToggleWeapon={toggleWeapon} 
+                          getAssignmentColor={getAssignmentColor} 
+                          getRoleColor={getRoleColor}
+                          assignments={assignments}
+                          onAssignEmployee={handleContextMenuAssign}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Special Assignments - Also Full Width */}
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
