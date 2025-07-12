@@ -16,6 +16,8 @@ import ManpowerDescription from '@/components/ManpowerDescription';
 import AreaNotesManager from '@/components/AreaNotesManager';
 import ComprehensiveDescriptionManager from '@/components/ComprehensiveDescriptionManager';
 import EmployeeContextMenu from '@/components/EmployeeContextMenu';
+import NotificationCenter from '@/components/NotificationCenter';
+import { useNotificationStore } from '@/hooks/useNotificationStore';
 
 interface Assignment {
   id: string;
@@ -178,6 +180,7 @@ const Index = () => {
   const [supervisorAssignments, setSupervisorAssignments] = useState<Record<string, string | null>>({});
   const [coordinatorAssignments, setCoordinatorAssignments] = useState<Record<string, string | null>>({});
   const [areaNotesData, setAreaNotesData] = useState<Record<string, any>>({});
+  const { addNotification } = useNotificationStore();
 
   // Initialize employees with sample data
   useEffect(() => {
@@ -367,12 +370,25 @@ const Index = () => {
     console.log('Adding new employee:', employee.name);
     const newEmployee = { ...employee, id: `emp-${Date.now()}` };
     setEmployees(prev => [...prev, newEmployee]);
+    
+    addNotification({
+      type: 'success',
+      title: 'Employee Added',
+      message: `${employee.name} has been successfully added to ${employee.shift}`,
+      action: {
+        label: 'View Employee',
+        onClick: () => console.log('View employee details')
+      }
+    });
+    
     toast.success(`${employee.name} added successfully!`);
     setShowProfileForm(false);
   };
 
   const removeEmployee = (employeeId: string) => {
     console.log('Removing employee:', employeeId);
+    const employee = employees.find(emp => emp.id === employeeId);
+    
     setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
     setAssignments(prev => prev.map(assignment => ({
       ...assignment,
@@ -399,16 +415,36 @@ const Index = () => {
       return updated;
     });
     
+    if (employee) {
+      addNotification({
+        type: 'warning',
+        title: 'Employee Removed',
+        message: `${employee.name} has been removed from the system`,
+      });
+    }
+    
     toast.success('Employee removed');
   };
 
   const toggleWeapon = (assignmentId: string) => {
     console.log('Toggling weapon for assignment:', assignmentId);
+    const assignment = assignments.find(a => a.id === assignmentId);
+    
     setAssignments(prev => prev.map(assignment => 
       assignment.id === assignmentId 
         ? { ...assignment, weaponAssigned: !assignment.weaponAssigned }
         : assignment
     ));
+    
+    if (assignment) {
+      const status = assignment.weaponAssigned ? 'removed from' : 'assigned to';
+      addNotification({
+        type: 'info',
+        title: 'Weapon Status Updated',
+        message: `Weapon ${status} ${assignment.name}`,
+      });
+    }
+    
     toast.success('Weapon status updated');
   };
 
@@ -429,12 +465,22 @@ const Index = () => {
 
     // Prevent dragging to unavailable personnel directly
     if (destination.droppableId === 'unavailable') {
+      addNotification({
+        type: 'error',
+        title: 'Assignment Not Allowed',
+        message: 'Employees automatically become unavailable when assigned to Training, Vacation, Assignment, or M-Time',
+      });
       toast.error('Employees automatically become unavailable when assigned to Training, Vacation, Assignment, or M-Time');
       return;
     }
 
     // Check capacity
     if (destAssignment.employees.length >= destAssignment.maxCapacity && destination.droppableId !== source.droppableId) {
+      addNotification({
+        type: 'warning',
+        title: 'Capacity Exceeded',
+        message: `${destAssignment.name} is at maximum capacity (${destAssignment.maxCapacity})`,
+      });
       toast.error(`${destAssignment.name} is at maximum capacity`);
       return;
     }
@@ -460,6 +506,23 @@ const Index = () => {
         }
         return assignment;
       });
+    });
+
+    addNotification({
+      type: 'success',
+      title: 'Assignment Updated',
+      message: `${draggedEmployee.name} assigned to ${destAssignment.name}`,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          // Implement undo functionality
+          addNotification({
+            type: 'info',
+            title: 'Undo Feature',
+            message: 'Undo functionality coming soon!',
+          });
+        }
+      }
     });
 
     toast.success(`${draggedEmployee.name} assigned to ${destAssignment.name}`);
@@ -517,6 +580,11 @@ const Index = () => {
     // Check capacity
     if (targetAssignment.employees.length >= targetAssignment.maxCapacity && 
         targetAssignmentId !== sourceAssignment.id) {
+      addNotification({
+        type: 'warning',
+        title: 'Assignment Failed',
+        message: `${targetAssignment.name} is at maximum capacity`,
+      });
       toast.error(`${targetAssignment.name} is at maximum capacity`);
       return;
     }
@@ -530,6 +598,11 @@ const Index = () => {
 
     // Prevent moving to unavailable directly
     if (targetAssignmentId === 'unavailable') {
+      addNotification({
+        type: 'error',
+        title: 'Invalid Assignment',
+        message: 'Cannot directly assign to unavailable. Use Training, Vacation, Assignment, or M-Time instead.',
+      });
       toast.error('Employees automatically become unavailable when assigned to Training, Vacation, Assignment, or M-Time');
       return;
     }
@@ -551,6 +624,12 @@ const Index = () => {
         }
         return assignment;
       });
+    });
+
+    addNotification({
+      type: 'success',
+      title: 'Quick Assignment',
+      message: `${employee.name} moved to ${targetAssignment.name}`,
     });
 
     toast.success(`${employee.name} assigned to ${targetAssignment.name}`);
@@ -643,6 +722,8 @@ const Index = () => {
                 Description Manager
               </Button>
               
+              <NotificationCenter />
+              
               <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 p-2 rounded-lg">
                 <Sun className="h-4 w-4" />
                 <Switch 
@@ -650,6 +731,11 @@ const Index = () => {
                   onCheckedChange={(checked) => {
                     console.log('Dark mode toggled:', checked);
                     setDarkMode(checked);
+                    addNotification({
+                      type: 'info',
+                      title: 'Theme Changed',
+                      message: `Switched to ${checked ? 'dark' : 'light'} mode`,
+                    });
                   }} 
                 />
                 <Moon className="h-4 w-4" />
