@@ -29,6 +29,7 @@ import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { EmployeeProfile } from './EmployeeProfileForm';
+import { useNotificationStore } from '@/hooks/useNotificationStore';
 
 interface ChecklistItem {
   id: string;
@@ -69,6 +70,7 @@ const AreaNotesManager: React.FC<AreaNotesManagerProps> = ({
   const [showDialog, setShowDialog] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [activeTab, setActiveTab] = useState('notes');
+  const { addNotification } = useNotificationStore();
 
   // Form states
   const [title, setTitle] = useState('');
@@ -101,10 +103,15 @@ const AreaNotesManager: React.FC<AreaNotesManagerProps> = ({
     }
   }, [areaCode]);
 
-  // Save notes to localStorage
+  // Save notes to localStorage and trigger updates
   const saveNotes = (updatedNotes: Note[]) => {
     localStorage.setItem(`area-notes-${areaCode}`, JSON.stringify(updatedNotes));
     setNotes(updatedNotes);
+    
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent('notesUpdated', { 
+      detail: { areaCode, notes: updatedNotes } 
+    }));
   };
 
   const resetForm = () => {
@@ -139,13 +146,25 @@ const AreaNotesManager: React.FC<AreaNotesManagerProps> = ({
   const toggleChecklistItem = (noteId: string, itemId: string) => {
     const updatedNotes = notes.map(note => {
       if (note.id === noteId && note.items) {
-        return {
+        const updatedNote = {
           ...note,
           items: note.items.map(item => 
             item.id === itemId ? { ...item, completed: !item.completed } : item
           ),
           updatedAt: new Date()
         };
+        
+        // Add notification for task completion
+        const toggledItem = note.items.find(item => item.id === itemId);
+        if (toggledItem) {
+          addNotification({
+            type: toggledItem.completed ? 'info' : 'success',
+            title: 'Task Updated',
+            message: `"${toggledItem.text}" marked as ${toggledItem.completed ? 'pending' : 'completed'} in ${areaName}`,
+          });
+        }
+        
+        return updatedNote;
       }
       return note;
     });
@@ -175,8 +194,26 @@ const AreaNotesManager: React.FC<AreaNotesManagerProps> = ({
     let updatedNotes;
     if (editingNote) {
       updatedNotes = notes.map(note => note.id === editingNote.id ? noteData : note);
+      
+      // Add notification for note update
+      addNotification({
+        type: 'info',
+        title: 'Note Updated',
+        message: `"${title}" updated in ${areaName}`,
+      });
     } else {
       updatedNotes = [noteData, ...notes];
+      
+      // Add notification for new note
+      addNotification({
+        type: 'success',
+        title: 'Note Added',
+        message: `New ${noteType} "${title}" added to ${areaName}`,
+        action: {
+          label: 'View Area',
+          onClick: () => console.log('Navigate to area')
+        }
+      });
     }
 
     saveNotes(updatedNotes);
@@ -197,8 +234,19 @@ const AreaNotesManager: React.FC<AreaNotesManagerProps> = ({
   };
 
   const deleteNote = (id: string) => {
+    const noteToDelete = notes.find(note => note.id === id);
     const updatedNotes = notes.filter(note => note.id !== id);
     saveNotes(updatedNotes);
+    
+    // Add notification for note deletion
+    if (noteToDelete) {
+      addNotification({
+        type: 'warning',
+        title: 'Note Deleted',
+        message: `"${noteToDelete.title}" removed from ${areaName}`,
+      });
+    }
+    
     toast.success('Note deleted');
   };
 
