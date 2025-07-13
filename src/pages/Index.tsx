@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -715,14 +716,14 @@ const Index = () => {
 
               <Button 
                 onClick={() => {
-                  console.log('Description Manager button clicked');
+                  console.log('Shift Assignment Manager button clicked');
                   setShowDescriptionManager(true);
                 }} 
                 className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-md" 
                 size="sm"
               >
                 <BarChart3 size={16} className="mr-2" />
-                Description Manager
+                Shift Assignment Manager
               </Button>
               
               <NotificationCenter />
