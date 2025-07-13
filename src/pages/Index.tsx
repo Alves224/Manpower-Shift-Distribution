@@ -731,11 +731,6 @@ const Index = () => {
                   onCheckedChange={(checked) => {
                     console.log('Dark mode toggled:', checked);
                     setDarkMode(checked);
-                    addNotification({
-                      type: 'info',
-                      title: 'Theme Changed',
-                      message: `Switched to ${checked ? 'dark' : 'light'} mode`,
-                    });
                   }} 
                 />
                 <Moon className="h-4 w-4" />
