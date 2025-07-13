@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,22 +39,22 @@ const CommandStructureManager: React.FC<CommandStructureManagerProps> = ({
   const handleAssignSupervisor = (employeeId: string) => {
     if (employeeId === 'none') {
       onAssignSupervisor(null);
-      toast.success('Security Shift Supervisor removed');
+      toast.success('Supervisor removed');
     } else {
       const employee = employees.find(emp => emp.id === employeeId);
       onAssignSupervisor(employeeId);
-      toast.success(`${employee?.name} assigned as Security Shift Supervisor`);
+      toast.success(`${employee?.name} assigned as Supervisor`);
     }
   };
 
   const handleAssignCoordinator = (employeeId: string) => {
     if (employeeId === 'none') {
       onAssignCoordinator(null);
-      toast.success('Security Shift Coordinator removed');
+      toast.success('Coordinator removed');
     } else {
       const employee = employees.find(emp => emp.id === employeeId);
       onAssignCoordinator(employeeId);
-      toast.success(`${employee?.name} assigned as Security Shift Coordinator`);
+      toast.success(`${employee?.name} assigned as Coordinator`);
     }
   };
 
@@ -112,13 +113,13 @@ const CommandStructureManager: React.FC<CommandStructureManagerProps> = ({
           </h4>
           <Select onValueChange={handleAssignSupervisor} value={supervisor?.id || 'none'}>
             <SelectTrigger>
-              <SelectValue placeholder="Select Security Shift Supervisor" />
+              <SelectValue placeholder="Select Supervisor" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">
                 <div className="flex items-center gap-2">
                   <UserX size={16} />
-                  No Security Shift Supervisor
+                  No Supervisor
                 </div>
               </SelectItem>
               {availableForSupervisor.map(employee => (
@@ -141,13 +142,13 @@ const CommandStructureManager: React.FC<CommandStructureManagerProps> = ({
           </h4>
           <Select onValueChange={handleAssignCoordinator} value={coordinator?.id || 'none'}>
             <SelectTrigger>
-              <SelectValue placeholder="Select Security Shift Coordinator" />
+              <SelectValue placeholder="Select Coordinator" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">
                 <div className="flex items-center gap-2">
                   <UserX size={16} />
-                  No Security Shift Coordinator
+                  No Coordinator
                 </div>
               </SelectItem>
               {availableForCoordinator.map(employee => (
