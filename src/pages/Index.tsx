@@ -210,8 +210,14 @@ const Index = () => {
         if (savedNotes) {
           try {
             const parsedNotes = JSON.parse(savedNotes);
-            notesData[areaCode] = parsedNotes;
-            console.log(`Parsed notes for ${areaCode}:`, parsedNotes);
+            // Process the notes to extract relevant information
+            if (Array.isArray(parsedNotes) && parsedNotes.length > 0) {
+              notesData[areaCode] = {
+                notes: parsedNotes.filter(note => note.type === 'note').map(note => note.content || note.title).join('; '),
+                todos: parsedNotes.filter(note => (note.type === 'checklist' || note.type === 'todo') && note.items).flatMap(note => note.items || [])
+              };
+            }
+            console.log(`Processed notes for ${areaCode}:`, notesData[areaCode]);
           } catch (error) {
             console.error(`Error parsing notes for ${areaCode}:`, error);
           }
@@ -235,8 +241,8 @@ const Index = () => {
     window.addEventListener('storage', handleStorageChange);
     
     // Also listen for custom events when notes are saved
-    const handleNotesUpdate = () => {
-      console.log('Notes updated event received');
+    const handleNotesUpdate = (e: any) => {
+      console.log('Notes updated event received', e.detail);
       setTimeout(loadAreaNotes, 100); // Small delay to ensure localStorage is updated
     };
     
@@ -1025,6 +1031,8 @@ const Index = () => {
                 (areaNotesInfo.notes && areaNotesInfo.notes.trim()) || 
                 (areaNotesInfo.todos && areaNotesInfo.todos.length > 0)
               );
+
+              console.log(`Rendering area ${areaCode}:`, { areaNotesInfo, hasNotes });
 
               return (
                 <div key={areaCode} className="space-y-4">
