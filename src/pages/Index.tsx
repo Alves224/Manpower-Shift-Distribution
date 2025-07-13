@@ -297,15 +297,6 @@ const Index = () => {
           area: areaCode
         }))
       ]),
-      // Patrol assignments
-      ...Array.from({ length: 8 }, (_, i) => ({
-        id: `patrol-${i + 1}`,
-        name: `Patrol ${i + 1}`,
-        type: 'patrol' as const,
-        employees: [],
-        maxCapacity: 1,
-        weaponAssigned: false
-      })),
       // Special assignments
       {
         id: 'training',
@@ -660,9 +651,14 @@ const Index = () => {
     return acc;
   }, {} as Record<string, Assignment[]>);
 
-  // Calculate total gates
+  // Calculate total gates and patrols per area
   const totalGates = Object.values(GATE_AREAS).reduce((total, area) => {
     return total + area.gates.length + area.vipGates.length;
+  }, 0);
+
+  // Calculate total patrols across all areas
+  const totalPatrols = Object.values(gateAssignmentsByArea).reduce((total, areaAssignments) => {
+    return total + areaAssignments.filter(a => a.type === 'patrol').length;
   }, 0);
 
   console.log('Render state:', {
@@ -670,7 +666,8 @@ const Index = () => {
     currentShiftEmployees: currentShiftEmployees.length,
     unassignedCount: unassignedPool?.employees.length || 0,
     assignmentsCount: assignments.length,
-    areaNotesData
+    areaNotesData,
+    totalPatrols
   });
 
   return (
@@ -771,7 +768,7 @@ const Index = () => {
                 <Car size={18} />
                 <div>
                   <div className="text-xs opacity-90">Patrol</div>
-                  <div className="text-lg font-bold">{patrolAssignments.length}</div>
+                  <div className="text-lg font-bold">{totalPatrols}</div>
                 </div>
               </div>
             </div>
@@ -1032,7 +1029,10 @@ const Index = () => {
                 (areaNotesInfo.todos && areaNotesInfo.todos.length > 0)
               );
 
-              console.log(`Rendering area ${areaCode}:`, { areaNotesInfo, hasNotes });
+              // Calculate area-specific patrol count
+              const areaPatrolCount = gateAssignmentsByArea[areaCode]?.filter(a => a.type === 'patrol').length || 0;
+
+              console.log(`Rendering area ${areaCode}:`, { areaNotesInfo, hasNotes, areaPatrolCount });
 
               return (
                 <div key={areaCode} className="space-y-4">
@@ -1043,8 +1043,13 @@ const Index = () => {
                       </div>
                       <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{areaData.name}</h3>
                       <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
-                        {gateAssignmentsByArea[areaCode]?.length || 0} Gates
+                        {gateAssignmentsByArea[areaCode]?.filter(a => a.type === 'gate').length || 0} Gates
                       </Badge>
+                      {areaPatrolCount > 0 && (
+                        <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs">
+                          {areaPatrolCount} Patrols
+                        </Badge>
+                      )}
                       
                       {/* Sticky Notes Indicator */}
                       {hasNotes && (
