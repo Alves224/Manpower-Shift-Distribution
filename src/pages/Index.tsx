@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Plus, Users, Shield, Car, Clock, UserPlus, Trash2, Moon, Sun, Settings, Zap, Activity, BarChart3, UserMinus, MapPin, FileText, StickyNote, CheckSquare } from 'lucide-react';
+import { Plus, Users, Shield, Car, Clock, UserPlus, Trash2, Moon, Sun, Settings, Zap, Activity, BarChart3, UserMinus, MapPin, FileText, StickyNote, CheckSquare, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import EmployeeProfileForm, { EmployeeProfile } from '@/components/EmployeeProfileForm';
 import ShiftHierarchy from '@/components/ShiftHierarchy';
@@ -172,6 +171,7 @@ const EXAMPLE_EMPLOYEES: EmployeeProfile[] = [
 
 const Index = () => {
   const [darkMode, setDarkMode] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
   const [currentShift, setCurrentShift] = useState('SHIFT 1');
   const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -675,119 +675,178 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-slate-200 dark:from-slate-950 dark:via-gray-900 dark:to-slate-900">
       <div className="container mx-auto p-4 space-y-6">
         {/* Modern Header */}
-        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/20 dark:border-slate-700/20">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-4">
-              <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-3 rounded-xl shadow-lg">
-                <Shield className="text-white" size={28} />
+        {!focusMode && (
+          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/20 dark:border-slate-700/20">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-4">
+                <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-3 rounded-xl shadow-lg">
+                  <Shield className="text-white" size={28} />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    YSOD Manpower Shift Distribution
+                  </h1>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm">Area-Based Assignment & Monitoring System</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  YSOD Manpower Shift Distribution
-                </h1>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">Area-Based Assignment & Monitoring System</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <Button 
-                onClick={() => {
-                  console.log('Add Employee button clicked');
-                  setShowProfileForm(true);
-                }} 
-                className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-md" 
-                size="sm"
-              >
-                <UserPlus size={16} className="mr-2" />
-                Add Employee
-              </Button>
               
-              <Button 
-                onClick={() => {
-                  console.log('Notes & Planning button clicked');
-                  setShowNotesManager(true);
-                }} 
-                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md" 
-                size="sm"
-              >
-                <FileText size={16} className="mr-2" />
-                Notes & Planning
-              </Button>
-
-              <Button 
-                onClick={() => {
-                  console.log('Shift Assignment Manager button clicked');
-                  setShowDescriptionManager(true);
-                }} 
-                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-md" 
-                size="sm"
-              >
-                <BarChart3 size={16} className="mr-2" />
-                Shift Assignment Manager
-              </Button>
-              
-              <NotificationCenter />
-              
-              <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 p-2 rounded-lg">
-                <Sun className="h-4 w-4" />
-                <Switch 
-                  checked={darkMode} 
-                  onCheckedChange={(checked) => {
-                    console.log('Dark mode toggled:', checked);
-                    setDarkMode(checked);
+              <div className="flex items-center gap-3">
+                <Button 
+                  onClick={() => {
+                    console.log('Add Employee button clicked');
+                    setShowProfileForm(true);
                   }} 
-                />
-                <Moon className="h-4 w-4" />
+                  className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-md" 
+                  size="sm"
+                >
+                  <UserPlus size={16} className="mr-2" />
+                  Add Employee
+                </Button>
+                
+                <Button 
+                  onClick={() => {
+                    console.log('Notes & Planning button clicked');
+                    setShowNotesManager(true);
+                  }} 
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md" 
+                  size="sm"
+                >
+                  <FileText size={16} className="mr-2" />
+                  Notes & Planning
+                </Button>
+
+                <Button 
+                  onClick={() => {
+                    console.log('Shift Assignment Manager button clicked');
+                    setShowDescriptionManager(true);
+                  }} 
+                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-md" 
+                  size="sm"
+                >
+                  <BarChart3 size={16} className="mr-2" />
+                  Shift Assignment Manager
+                </Button>
+                
+                <NotificationCenter />
+                
+                <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 p-2 rounded-lg">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      console.log('Focus mode toggled:', !focusMode);
+                      setFocusMode(!focusMode);
+                    }}
+                    className={`${focusMode ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : ''}`}
+                  >
+                    {focusMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                  <Sun className="h-4 w-4" />
+                  <Switch 
+                    checked={darkMode} 
+                    onCheckedChange={(checked) => {
+                      console.log('Dark mode toggled:', checked);
+                      setDarkMode(checked);
+                    }} 
+                  />
+                  <Moon className="h-4 w-4" />
+                </div>
+              </div>
+            </div>
+            
+            {/* Compact Stats Cards */}
+            <div className="grid grid-cols-4 gap-3">
+              <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-3 rounded-lg shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Users size={18} />
+                  <div>
+                    <div className="text-xs opacity-90">Active Personnel</div>
+                    <div className="text-lg font-bold">{currentShiftEmployees.length}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-3 rounded-lg shadow-sm">
+                <div className="flex items-center gap-2">
+                  <MapPin size={18} />
+                  <div>
+                    <div className="text-xs opacity-90">Gates</div>
+                    <div className="text-lg font-bold">{totalGates}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-lg shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Car size={18} />
+                  <div>
+                    <div className="text-xs opacity-90">Patrol</div>
+                    <div className="text-lg font-bold">{totalPatrols}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-3 rounded-lg shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Activity size={18} />
+                  <div>
+                    <div className="text-xs opacity-90">Current Shift</div>
+                    <div className="text-lg font-bold">{currentShift.replace('SHIFT ', '')}</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          
-          {/* Compact Stats Cards */}
-          <div className="grid grid-cols-4 gap-3">
-            <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-3 rounded-lg shadow-sm">
-              <div className="flex items-center gap-2">
-                <Users size={18} />
+        )}
+
+        {/* Focus Mode Header */}
+        {focusMode && (
+          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl p-4 shadow-lg border border-white/20 dark:border-slate-700/20">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-lg shadow-lg">
+                  <Shield className="text-white" size={20} />
+                </div>
                 <div>
-                  <div className="text-xs opacity-90">Active Personnel</div>
-                  <div className="text-lg font-bold">{currentShiftEmployees.length}</div>
+                  <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Focus Mode - {currentShift}
+                  </h1>
+                  <p className="text-slate-600 dark:text-slate-400 text-xs">Command Structure & Area Overview</p>
                 </div>
               </div>
-            </div>
-            
-            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-3 rounded-lg shadow-sm">
+              
               <div className="flex items-center gap-2">
-                <MapPin size={18} />
-                <div>
-                  <div className="text-xs opacity-90">Gates</div>
-                  <div className="text-lg font-bold">{totalGates}</div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-lg shadow-sm">
-              <div className="flex items-center gap-2">
-                <Car size={18} />
-                <div>
-                  <div className="text-xs opacity-90">Patrol</div>
-                  <div className="text-lg font-bold">{totalPatrols}</div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-3 rounded-lg shadow-sm">
-              <div className="flex items-center gap-2">
-                <Activity size={18} />
-                <div>
-                  <div className="text-xs opacity-90">Current Shift</div>
-                  <div className="text-lg font-bold">{currentShift.replace('SHIFT ', '')}</div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    console.log('Focus mode disabled');
+                    setFocusMode(false);
+                  }}
+                  className="bg-white/50 dark:bg-slate-800/50"
+                >
+                  <EyeOff className="h-4 w-4 mr-2" />
+                  Exit Focus
+                </Button>
+                
+                <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 p-2 rounded-lg">
+                  <Sun className="h-4 w-4" />
+                  <Switch 
+                    checked={darkMode} 
+                    onCheckedChange={(checked) => {
+                      console.log('Dark mode toggled:', checked);
+                      setDarkMode(checked);
+                    }} 
+                  />
+                  <Moon className="h-4 w-4" />
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Employee Profile Form */}
-        {showProfileForm && (
+        {showProfileForm && !focusMode && (
           <EmployeeProfileForm 
             currentShift={currentShift} 
             onAddEmployee={addEmployee} 
@@ -796,7 +855,7 @@ const Index = () => {
         )}
 
         {/* Global Notes Manager */}
-        {showNotesManager && (
+        {showNotesManager && !focusMode && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
@@ -826,7 +885,7 @@ const Index = () => {
         )}
 
         {/* Comprehensive Description Manager */}
-        {showDescriptionManager && (
+        {showDescriptionManager && !focusMode && (
           <ComprehensiveDescriptionManager 
             currentShift={currentShift}
             assignments={assignments}
@@ -838,61 +897,69 @@ const Index = () => {
         )}
 
         {/* Shift Selector */}
-        <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-center gap-4">
-              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                <Clock size={18} />
-                <span className="font-medium">Active Shift:</span>
+        {!focusMode && (
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-center gap-4">
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                  <Clock size={18} />
+                  <span className="font-medium">Active Shift:</span>
+                </div>
+                {SHIFTS.map(shift => (
+                  <Button 
+                    key={shift} 
+                    variant={currentShift === shift ? "default" : "outline"}
+                    onClick={() => {
+                      console.log('Shift changed to:', shift);
+                      setCurrentShift(shift);
+                    }}
+                    className={currentShift === shift 
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-md' 
+                      : 'border-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }
+                    size="sm"
+                  >
+                    {shift}
+                  </Button>
+                ))}
               </div>
-              {SHIFTS.map(shift => (
-                <Button 
-                  key={shift} 
-                  variant={currentShift === shift ? "default" : "outline"}
-                  onClick={() => {
-                    console.log('Shift changed to:', shift);
-                    setCurrentShift(shift);
-                  }}
-                  className={currentShift === shift 
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-md' 
-                    : 'border-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }
-                  size="sm"
-                >
-                  {shift}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Assignment Manager */}
-        <AssignmentManager 
-          assignments={assignments} 
-          onAddAssignment={addAssignment} 
-          onDeleteAssignment={deleteAssignment} 
-        />
+        {!focusMode && (
+          <AssignmentManager 
+            assignments={assignments} 
+            onAddAssignment={addAssignment} 
+            onDeleteAssignment={deleteAssignment} 
+          />
+        )}
 
         {/* Command Structure Manager */}
-        <CommandStructureManager 
-          shift={currentShift} 
-          employees={employees} 
-          supervisor={supervisor} 
-          coordinator={coordinator} 
-          onAssignSupervisor={assignSupervisor} 
-          onAssignCoordinator={assignCoordinator}
-          onDeleteEmployee={removeEmployee}
-        />
+        {!focusMode && (
+          <CommandStructureManager 
+            shift={currentShift} 
+            employees={employees} 
+            supervisor={supervisor} 
+            coordinator={coordinator} 
+            onAssignSupervisor={assignSupervisor} 
+            onAssignCoordinator={assignCoordinator}
+            onDeleteEmployee={removeEmployee}
+          />
+        )}
 
         {/* Manpower Description */}
-        <ManpowerDescription 
-          currentShift={currentShift} 
-          assignments={assignments} 
-          supervisor={supervisor} 
-          coordinator={coordinator} 
-        />
+        {!focusMode && (
+          <ManpowerDescription 
+            currentShift={currentShift} 
+            assignments={assignments} 
+            supervisor={supervisor} 
+            coordinator={coordinator} 
+          />
+        )}
 
-        {/* Shift Hierarchy */}
+        {/* Shift Hierarchy - Always visible */}
         <ShiftHierarchy 
           shift={currentShift} 
           supervisor={supervisor} 
@@ -902,127 +969,129 @@ const Index = () => {
 
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="space-y-6">
-            {/* Personnel Pools - Full Width */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Available Employees Pool */}
-              <Card className="bg-gradient-to-br from-emerald-50/90 to-green-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-emerald-200/50 dark:border-slate-700/50 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-t-lg p-3">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <Users size={16} />
-                    Available Personnel
-                    <Badge className="bg-white/20 text-white text-xs">
-                      {unassignedPool?.employees.length || 0}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <Droppable droppableId="unassigned">
-                    {(provided, snapshot) => (
-                      <div 
-                        ref={provided.innerRef} 
-                        {...provided.droppableProps} 
-                        className={`min-h-24 max-h-64 overflow-y-auto p-2 rounded-lg border-2 border-dashed transition-all ${
-                          snapshot.isDraggingOver 
-                            ? 'border-emerald-400 bg-emerald-100/50 dark:bg-emerald-950/50' 
-                            : 'border-slate-300/50 dark:border-slate-600/50'
-                        }`}
-                      >
-                        {unassignedPool?.employees.length === 0 && (
-                          <div className="text-center text-slate-400 py-4">
-                            No available personnel
-                          </div>
-                        )}
-                        {unassignedPool?.employees.map((employee, index) => (
-                          <Draggable key={employee.id} draggableId={employee.id} index={index}>
-                            {(provided, snapshot) => (
-                              <EmployeeContextMenu
-                                assignments={assignments}
-                                onAssignEmployee={(targetAssignmentId) => handleContextMenuAssign(employee.id, targetAssignmentId)}
-                                currentAssignmentId="unassigned"
-                              >
-                                <div 
-                                  ref={provided.innerRef} 
-                                  {...provided.draggableProps} 
-                                  {...provided.dragHandleProps} 
-                                  className={`p-2 mb-2 bg-white/90 dark:bg-slate-700/90 rounded-lg border shadow-sm cursor-move transition-all hover:shadow-md ${
-                                    snapshot.isDragging ? 'rotate-1 shadow-lg scale-105' : ''
-                                  }`}
+            {/* Personnel Pools - Hidden in focus mode */}
+            {!focusMode && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Available Employees Pool */}
+                <Card className="bg-gradient-to-br from-emerald-50/90 to-green-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-emerald-200/50 dark:border-slate-700/50 shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-t-lg p-3">
+                    <CardTitle className="flex items-center gap-2 text-sm">
+                      <Users size={16} />
+                      Available Personnel
+                      <Badge className="bg-white/20 text-white text-xs">
+                        {unassignedPool?.employees.length || 0}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3">
+                    <Droppable droppableId="unassigned">
+                      {(provided, snapshot) => (
+                        <div 
+                          ref={provided.innerRef} 
+                          {...provided.droppableProps} 
+                          className={`min-h-24 max-h-64 overflow-y-auto p-2 rounded-lg border-2 border-dashed transition-all ${
+                            snapshot.isDraggingOver 
+                              ? 'border-emerald-400 bg-emerald-100/50 dark:bg-emerald-950/50' 
+                              : 'border-slate-300/50 dark:border-slate-600/50'
+                          }`}
+                        >
+                          {unassignedPool?.employees.length === 0 && (
+                            <div className="text-center text-slate-400 py-4">
+                              No available personnel
+                            </div>
+                          )}
+                          {unassignedPool?.employees.map((employee, index) => (
+                            <Draggable key={employee.id} draggableId={employee.id} index={index}>
+                              {(provided, snapshot) => (
+                                <EmployeeContextMenu
+                                  assignments={assignments}
+                                  onAssignEmployee={(targetAssignmentId) => handleContextMenuAssign(employee.id, targetAssignmentId)}
+                                  currentAssignmentId="unassigned"
                                 >
-                                  <div className="flex items-center gap-2">
-                                    <Avatar className="h-6 w-6 border">
-                                      <AvatarImage src={employee.image} alt={employee.name} />
-                                      <AvatarFallback className="text-xs">
-                                        {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="font-medium text-xs truncate">{employee.name}</div>
-                                      <div className="text-xs text-slate-500">#{employee.badge}</div>
+                                  <div 
+                                    ref={provided.innerRef} 
+                                    {...provided.draggableProps} 
+                                    {...provided.dragHandleProps} 
+                                    className={`p-2 mb-2 bg-white/90 dark:bg-slate-700/90 rounded-lg border shadow-sm cursor-move transition-all hover:shadow-md ${
+                                      snapshot.isDragging ? 'rotate-1 shadow-lg scale-105' : ''
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Avatar className="h-6 w-6 border">
+                                        <AvatarImage src={employee.image} alt={employee.name} />
+                                        <AvatarFallback className="text-xs">
+                                          {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-medium text-xs truncate">{employee.name}</div>
+                                        <div className="text-xs text-slate-500">#{employee.badge}</div>
+                                      </div>
+                                      <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          console.log('Delete employee clicked:', employee.id);
+                                          removeEmployee(employee.id);
+                                        }} 
+                                        className="h-5 w-5 p-0 text-red-500 hover:bg-red-100"
+                                      >
+                                        <Trash2 size={10} />
+                                      </Button>
                                     </div>
-                                    <Button 
-                                      size="sm" 
-                                      variant="ghost" 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        console.log('Delete employee clicked:', employee.id);
-                                        removeEmployee(employee.id);
-                                      }} 
-                                      className="h-5 w-5 p-0 text-red-500 hover:bg-red-100"
-                                    >
-                                      <Trash2 size={10} />
-                                    </Button>
                                   </div>
-                                </div>
-                              </EmployeeContextMenu>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </CardContent>
-              </Card>
+                                </EmployeeContextMenu>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </CardContent>
+                </Card>
 
-              {/* Unavailable Personnel Pool */}
-              <Card className="bg-gradient-to-br from-red-50/90 to-orange-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-red-200/50 dark:border-slate-700/50 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-t-lg p-3">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <UserMinus size={16} />
-                    Unavailable
-                    <Badge className="bg-white/20 text-white text-xs">
-                      {unavailablePool?.employees.length || 0}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <div className="min-h-16 max-h-32 overflow-y-auto p-2 rounded-lg border-2 border-dashed border-slate-300/50 bg-slate-50/50 dark:bg-slate-800/50">
-                    {unavailablePool?.employees.length === 0 && (
-                      <div className="text-center text-slate-400 py-2 text-xs">
-                        No unavailable personnel
-                      </div>
-                    )}
-                    {unavailablePool?.employees.map(employee => (
-                      <div key={employee.id} className="p-2 mb-1 bg-white/50 dark:bg-slate-700/50 rounded opacity-75">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-5 w-5">
-                            <AvatarImage src={employee.image} alt={employee.name} />
-                            <AvatarFallback className="text-xs">
-                              {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-xs truncate">{employee.name}</div>
+                {/* Unavailable Personnel Pool */}
+                <Card className="bg-gradient-to-br from-red-50/90 to-orange-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-red-200/50 dark:border-slate-700/50 shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-t-lg p-3">
+                    <CardTitle className="flex items-center gap-2 text-sm">
+                      <UserMinus size={16} />
+                      Unavailable
+                      <Badge className="bg-white/20 text-white text-xs">
+                        {unavailablePool?.employees.length || 0}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3">
+                    <div className="min-h-16 max-h-32 overflow-y-auto p-2 rounded-lg border-2 border-dashed border-slate-300/50 bg-slate-50/50 dark:bg-slate-800/50">
+                      {unavailablePool?.employees.length === 0 && (
+                        <div className="text-center text-slate-400 py-2 text-xs">
+                          No unavailable personnel
+                        </div>
+                      )}
+                      {unavailablePool?.employees.map(employee => (
+                        <div key={employee.id} className="p-2 mb-1 bg-white/50 dark:bg-slate-700/50 rounded opacity-75">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={employee.image} alt={employee.name} />
+                              <AvatarFallback className="text-xs">
+                                {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-xs truncate">{employee.name}</div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
-            {/* Security Gates by Area - Each Area Stacked Vertically */}
+            {/* Security Gates by Area - Always visible with beautiful design */}
             {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => {
               const areaNotesInfo = areaNotesData[areaCode];
               const hasNotes = areaNotesInfo && (
@@ -1113,28 +1182,30 @@ const Index = () => {
               );
             })}
 
-            {/* Special Assignments - Also Full Width */}
-            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
-                  <BarChart3 className="text-white" size={20} />
+            {/* Special Assignments - Hidden in focus mode */}
+            {!focusMode && (
+              <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
+                    <BarChart3 className="text-white" size={20} />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Special Assignments</h3>
                 </div>
-                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Special Assignments</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                  {specialAssignments.map(assignment => (
+                    <EnhancedGateCard 
+                      key={assignment.id} 
+                      assignment={assignment} 
+                      onToggleWeapon={toggleWeapon} 
+                      getAssignmentColor={getAssignmentColor} 
+                      getRoleColor={getRoleColor}
+                      assignments={assignments}
+                      onAssignEmployee={handleContextMenuAssign}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-                {specialAssignments.map(assignment => (
-                  <EnhancedGateCard 
-                    key={assignment.id} 
-                    assignment={assignment} 
-                    onToggleWeapon={toggleWeapon} 
-                    getAssignmentColor={getAssignmentColor} 
-                    getRoleColor={getRoleColor}
-                    assignments={assignments}
-                    onAssignEmployee={handleContextMenuAssign}
-                  />
-                ))}
-              </div>
-            </div>
+            )}
           </div>
         </DragDropContext>
       </div>
