@@ -39,7 +39,7 @@ const ShiftHierarchy: React.FC<ShiftHierarchyProps> = ({
                 </AvatarFallback>
               </Avatar>
               <Badge className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs px-2 py-1">
-                Supervisor
+                Security Shift Supervisor
               </Badge>
             </div>
             <div className="mt-4">
@@ -74,7 +74,7 @@ const ShiftHierarchy: React.FC<ShiftHierarchyProps> = ({
                 </AvatarFallback>
               </Avatar>
               <Badge className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white text-xs px-2 py-1">
-                Coordinator
+                Security Shift Coordinator
               </Badge>
             </div>
             <div className="mt-4">
