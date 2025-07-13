@@ -89,7 +89,7 @@ const ManpowerDistribution: React.FC<ManpowerDistributionProps> = ({
   const generatePDFContent = (record: DistributionRecord) => {
     const dateRangeStr = `${format(record.dateRange.start, 'MMMM d')} to ${format(record.dateRange.end, 'MMMM d, yyyy')}`;
     
-    let content = `MANPOWER DISTRIBUTION LIST\n`;
+    let content = `SHIFT ASSIGNMENT MANAGER\n`;
     content += `${dateRangeStr}\n`;
     content += `Shift: ${record.shift}\n`;
     content += `\n`;
@@ -205,12 +205,12 @@ const ManpowerDistribution: React.FC<ManpowerDistributionProps> = ({
 
   const sendByEmail = (record: DistributionRecord) => {
     const dateRangeStr = `${format(record.dateRange.start, 'MMMM d')} to ${format(record.dateRange.end, 'MMMM d, yyyy')}`;
-    const subject = `YSOD ${record.shift} Manpower Distribution for ${dateRangeStr}`;
+    const subject = `Shift Assignment Manager - ${record.shift} Distribution for ${dateRangeStr}`;
     
     // Simplified email body as requested
     const emailBody = `Greetings All,
 
-Please find attached the YSOD ${record.shift} manpower distribution for the period ${dateRangeStr}.
+Please find attached the Shift Assignment Manager ${record.shift} distribution for the period ${dateRangeStr}.
 
 Best regards,
 Security Operations Team`;
@@ -340,12 +340,12 @@ Security Operations Team`;
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
               <FileText size={16} className="mr-2" />
-              Create Distribution
+              Create Assignment Distribution
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Create Manpower Distribution</DialogTitle>
+              <DialogTitle>Create Shift Assignment Distribution</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               {/* Date Range Selection */}
@@ -463,12 +463,12 @@ Security Operations Team`;
           <DialogTrigger asChild>
             <Button variant="outline">
               <History size={16} className="mr-2" />
-              View History ({savedDistributions.length})
+              View Assignment History ({savedDistributions.length})
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Distribution History</DialogTitle>
+              <DialogTitle>Assignment Distribution History</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               {savedDistributions.length === 0 ? (

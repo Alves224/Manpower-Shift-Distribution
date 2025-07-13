@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -121,7 +120,7 @@ const ComprehensiveDescriptionManager: React.FC<ComprehensiveDescriptionManagerP
     const patrolAssignments = assignments.filter(a => a.type === 'patrol' && a.employees.length > 0);
     const specialAssignments = assignments.filter(a => (a.type === 'training' || a.type === 'vacation') && a.employees.length > 0);
 
-    let content = `Security Status Report - ${currentShift}\n`;
+    let content = `Shift Assignment Manager Report - ${currentShift}\n`;
     content += `Date: ${format(selectedDate, 'PPP')}\n`;
     content += `Time: ${format(new Date(), 'HH:mm')}\n\n`;
 
@@ -303,10 +302,10 @@ const ComprehensiveDescriptionManager: React.FC<ComprehensiveDescriptionManagerP
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                Comprehensive Description Manager
+                Shift Assignment Manager
               </h2>
               <p className="text-slate-600 dark:text-slate-400 mt-1">
-                Create, manage, and export detailed security descriptions with historical tracking
+                Create, manage, and export detailed security assignments with historical tracking
               </p>
             </div>
             <Button onClick={onClose} variant="ghost" size="sm" className="text-slate-500 hover:text-slate-700">
