@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bell, X, Check, Trash2, CheckCheck } from 'lucide-react';
-import { useNotificationStore, NotificationType } from '@/hooks/useNotificationStore';
-import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
+import { useNotificationStore } from '@/hooks/useNotificationStore';
+import { format } from 'date-fns';
 
-const NotificationCenter: React.FC = () => {
+const NotificationCenter = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { 
     notifications, 
@@ -17,187 +18,171 @@ const NotificationCenter: React.FC = () => {
     clearAll, 
     getUnreadCount 
   } = useNotificationStore();
-  
+
   const unreadCount = getUnreadCount();
 
-  const getNotificationIcon = (type: NotificationType) => {
+  const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'success':
-        return '✅';
-      case 'error':
-        return '❌';
-      case 'warning':
-        return '⚠️';
-      case 'info':
-        return 'ℹ️';
-      default:
-        return '📢';
+      case 'success': return '✅';
+      case 'error': return '❌';
+      case 'warning': return '⚠️';
+      case 'info': return 'ℹ️';
+      default: return '📝';
     }
   };
 
-  const getNotificationColor = (type: NotificationType) => {
+  const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'success':
-        return 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950';
-      case 'error':
-        return 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950';
-      case 'warning':
-        return 'border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950';
-      case 'info':
-        return 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950';
-      default:
-        return 'border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950';
+      case 'success': return 'border-l-green-500 bg-green-50 dark:bg-green-950/30';
+      case 'error': return 'border-l-red-500 bg-red-50 dark:bg-red-950/30';
+      case 'warning': return 'border-l-orange-500 bg-orange-50 dark:bg-orange-950/30';
+      case 'info': return 'border-l-blue-500 bg-blue-50 dark:bg-blue-950/30';
+      default: return 'border-l-gray-500 bg-gray-50 dark:bg-gray-950/30';
     }
   };
 
   return (
-    <div className="relative">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative"
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="relative bg-white/50 dark:bg-slate-800/50 border-2 border-white/40 hover:bg-white/70 dark:hover:bg-slate-800/70"
+        >
+          <Bell size={16} />
+          {unreadCount > 0 && (
+            <Badge 
+              className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-red-500 text-white text-xs font-bold animate-pulse"
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent 
+        className="w-96 p-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-white/20 dark:border-slate-700/20 shadow-2xl z-[100]" 
+        align="end"
+        side="bottom"
+        sideOffset={8}
       >
-        <Bell size={18} />
-        {unreadCount > 0 && (
-          <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs bg-red-500 text-white">
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </Badge>
-        )}
-      </Button>
+        <div className="p-4 border-b border-gray-200 dark:border-slate-700">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Notifications
+            </h3>
+            <div className="flex items-center gap-2">
+              {notifications.length > 0 && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={markAllAsRead}
+                    className="text-xs hover:bg-blue-100 dark:hover:bg-slate-800"
+                  >
+                    <CheckCheck size={12} className="mr-1" />
+                    Mark All Read
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={clearAll}
+                    className="text-xs text-red-600 hover:bg-red-100 dark:hover:bg-red-950/30"
+                  >
+                    <Trash2 size={12} className="mr-1" />
+                    Clear All
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+          {unreadCount > 0 && (
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+              {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
 
-      {isOpen && (
-        <>
-          <div 
-            className="fixed inset-0 z-40" 
-            onClick={() => setIsOpen(false)} 
-          />
-          <Card className="absolute right-0 top-12 w-96 max-h-96 z-50 shadow-lg border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Notifications
-                {unreadCount > 0 && (
-                  <Badge variant="secondary" className="ml-2">
-                    {unreadCount}
-                  </Badge>
-                )}
-              </CardTitle>
-              <div className="flex gap-1">
-                {notifications.length > 0 && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={markAllAsRead}
-                      className="h-6 w-6 p-0"
-                      title="Mark all as read"
-                    >
-                      <CheckCheck size={12} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearAll}
-                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                      title="Clear all"
-                    >
-                      <Trash2 size={12} />
-                    </Button>
-                  </>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsOpen(false)}
-                  className="h-6 w-6 p-0"
+        <ScrollArea className="max-h-96">
+          {notifications.length === 0 ? (
+            <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+              <Bell size={32} className="mx-auto mb-2 opacity-50" />
+              <p className="font-medium">No notifications</p>
+              <p className="text-sm mt-1">You're all caught up!</p>
+            </div>
+          ) : (
+            <div className="p-2 space-y-2">
+              {notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`p-3 rounded-lg border-l-4 transition-all hover:shadow-md ${getNotificationColor(notification.type)} ${
+                    !notification.read ? 'ring-2 ring-blue-500/20' : 'opacity-75'
+                  }`}
                 >
-                  <X size={12} />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="max-h-80 overflow-y-auto">
-                {notifications.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500 text-sm">
-                    No notifications
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    {notifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className={cn(
-                          'p-3 border-l-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors',
-                          getNotificationColor(notification.type),
-                          !notification.read && 'font-medium'
-                        )}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-start gap-2 flex-1">
-                            <span className="text-sm">{getNotificationIcon(notification.type)}</span>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-medium truncate">
-                                  {notification.title}
-                                </p>
-                                {!notification.read && (
-                                  <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
-                                )}
-                              </div>
-                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                {notification.message}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-1">
-                                {notification.timestamp.toLocaleTimeString()}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex gap-1 flex-shrink-0">
-                            {!notification.read && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => markAsRead(notification.id)}
-                                className="h-6 w-6 p-0"
-                                title="Mark as read"
-                              >
-                                <Check size={10} />
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeNotification(notification.id)}
-                              className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                              title="Remove"
-                            >
-                              <X size={10} />
-                            </Button>
-                          </div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 flex-1 min-w-0">
+                      <span className="text-lg flex-shrink-0 mt-0.5">
+                        {getNotificationIcon(notification.type)}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium text-sm text-slate-900 dark:text-slate-100 truncate">
+                            {notification.title}
+                          </h4>
+                          {!notification.read && (
+                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 animate-pulse" />
+                          )}
                         </div>
-                        {notification.action && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              notification.action?.onClick();
-                              markAsRead(notification.id);
-                            }}
-                            className="mt-2 h-6 text-xs"
-                          >
-                            {notification.action.label}
-                          </Button>
-                        )}
+                        <p className="text-xs text-slate-700 dark:text-slate-300 line-clamp-2 mb-2">
+                          {notification.message}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {format(notification.timestamp, 'MMM d, HH:mm')}
+                          </span>
+                          {notification.action && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                notification.action?.onClick();
+                                markAsRead(notification.id);
+                              }}
+                              className="text-xs h-6 px-2 bg-white/50 hover:bg-white/80 dark:bg-slate-800/50 dark:hover:bg-slate-800/80"
+                            >
+                              {notification.action.label}
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    ))}
+                    </div>
+                    <div className="flex flex-col gap-1 flex-shrink-0">
+                      {!notification.read && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => markAsRead(notification.id)}
+                          className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-950/50"
+                        >
+                          <Check size={10} />
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => removeNotification(notification.id)}
+                        className="h-6 w-6 p-0 text-red-500 hover:bg-red-100 dark:hover:bg-red-950/50"
+                      >
+                        <X size={10} />
+                      </Button>
+                    </div>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
-    </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
   );
 };
 
