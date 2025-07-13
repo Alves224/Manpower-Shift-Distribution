@@ -968,10 +968,11 @@ const Index = () => {
         />
 
         <DragDropContext onDragEnd={onDragEnd}>
-          <div className="space-y-6">
-            {/* Personnel Pools - Show in focus mode but in left sidebar style */}
-            {focusMode && (
-              <div className="grid grid-cols-2 gap-4 max-w-2xl">
+          {/* Focus Mode Layout with Left Sidebar */}
+          {focusMode ? (
+            <div className="flex gap-4">
+              {/* Left Sidebar - Personnel Pools */}
+              <div className="w-80 space-y-4">
                 {/* Available Employees Pool */}
                 <Card className="bg-gradient-to-br from-emerald-50/90 to-green-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-emerald-200/50 dark:border-slate-700/50 shadow-lg">
                   <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-t-lg p-3">
@@ -984,7 +985,7 @@ const Index = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-3">
-                    <div className="min-h-20 max-h-40 overflow-y-auto space-y-2">
+                    <div className="min-h-32 max-h-80 overflow-y-auto space-y-2">
                       {unassignedPool?.employees.length === 0 && (
                         <div className="text-center text-slate-400 py-4 text-xs">
                           No available personnel
@@ -1022,7 +1023,7 @@ const Index = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-3">
-                    <div className="min-h-20 max-h-40 overflow-y-auto space-y-1">
+                    <div className="min-h-20 max-h-60 overflow-y-auto space-y-1">
                       {unavailablePool?.employees.length === 0 && (
                         <div className="text-center text-slate-400 py-4 text-xs">
                           No unavailable personnel
@@ -1047,10 +1048,101 @@ const Index = () => {
                   </CardContent>
                 </Card>
               </div>
-            )}
 
-            {/* Personnel Pools - Hidden in focus mode (original placement) */}
-            {!focusMode && (
+              {/* Right Content Area */}
+              <div className="flex-1 space-y-6">
+                {/* Security Gates by Area */}
+                {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => {
+                  const areaNotesInfo = areaNotesData[areaCode];
+                  const hasNotes = areaNotesInfo && (
+                    (areaNotesInfo.notes && areaNotesInfo.notes.trim()) || 
+                    (areaNotesInfo.todos && areaNotesInfo.todos.length > 0)
+                  );
+
+                  const areaPatrolCount = gateAssignmentsByArea[areaCode]?.filter(a => a.type === 'patrol').length || 0;
+
+                  return (
+                    <div key={areaCode} className="space-y-4">
+                      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className={`bg-gradient-to-r ${areaData.color} p-2 rounded-lg`}>
+                            <MapPin className="text-white" size={20} />
+                          </div>
+                          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{areaData.name}</h3>
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                            {gateAssignmentsByArea[areaCode]?.filter(a => a.type === 'gate').length || 0} Gates
+                          </Badge>
+                          {areaPatrolCount > 0 && (
+                            <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs">
+                              {areaPatrolCount} Patrols
+                            </Badge>
+                          )}
+                          
+                          {/* Sticky Notes Indicator */}
+                          {hasNotes && (
+                            <div className="flex items-center gap-2 ml-auto">
+                              {areaNotesInfo.notes && areaNotesInfo.notes.trim() && (
+                                <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded p-2 max-w-xs">
+                                  <div className="flex items-center gap-1 mb-1">
+                                    <StickyNote size={12} className="text-yellow-600 dark:text-yellow-400" />
+                                    <span className="text-xs font-medium text-yellow-800 dark:text-yellow-300">Note</span>
+                                  </div>
+                                  <p className="text-xs text-yellow-700 dark:text-yellow-300 line-clamp-2">
+                                    {areaNotesInfo.notes}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {areaNotesInfo.todos && areaNotesInfo.todos.length > 0 && (
+                                <div className="bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded p-2 max-w-xs">
+                                  <div className="flex items-center gap-1 mb-1">
+                                    <CheckSquare size={12} className="text-blue-600 dark:text-blue-400" />
+                                    <span className="text-xs font-medium text-blue-800 dark:text-blue-300">
+                                      Tasks ({areaNotesInfo.todos.filter((t: any) => !t.completed).length}/{areaNotesInfo.todos.length})
+                                    </span>
+                                  </div>
+                                  <div className="space-y-1">
+                                    {areaNotesInfo.todos.slice(0, 2).map((todo: any, index: number) => (
+                                      <div key={index} className="flex items-center gap-1">
+                                        <div className={`w-1 h-1 rounded-full ${todo.completed ? 'bg-green-500' : 'bg-orange-500'}`} />
+                                        <span className={`text-xs ${todo.completed ? 'line-through text-blue-500' : 'text-blue-700 dark:text-blue-300'} line-clamp-1`}>
+                                          {todo.text}
+                                        </span>
+                                      </div>
+                                    ))}
+                                    {areaNotesInfo.todos.length > 2 && (
+                                      <span className="text-xs text-blue-500 dark:text-blue-400">
+                                        +{areaNotesInfo.todos.length - 2} more
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                          {gateAssignmentsByArea[areaCode]?.map(assignment => (
+                            <EnhancedGateCard 
+                              key={assignment.id} 
+                              assignment={assignment} 
+                              onToggleWeapon={toggleWeapon} 
+                              getAssignmentColor={getAssignmentColor} 
+                              getRoleColor={getRoleColor}
+                              assignments={assignments}
+                              onAssignEmployee={handleContextMenuAssign}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Personnel Pools - Normal mode */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Available Employees Pool */}
                 <Card className="bg-gradient-to-br from-emerald-50/90 to-green-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-emerald-200/50 dark:border-slate-700/50 shadow-lg">
@@ -1169,101 +1261,96 @@ const Index = () => {
                   </CardContent>
                 </Card>
               </div>
-            )}
 
-            {/* Security Gates by Area - Always visible with beautiful design */}
-            {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => {
-              const areaNotesInfo = areaNotesData[areaCode];
-              const hasNotes = areaNotesInfo && (
-                (areaNotesInfo.notes && areaNotesInfo.notes.trim()) || 
-                (areaNotesInfo.todos && areaNotesInfo.todos.length > 0)
-              );
+              {/* Security Gates by Area - Normal mode */}
+              {Object.entries(GATE_AREAS).map(([areaCode, areaData]) => {
+                const areaNotesInfo = areaNotesData[areaCode];
+                const hasNotes = areaNotesInfo && (
+                  (areaNotesInfo.notes && areaNotesInfo.notes.trim()) || 
+                  (areaNotesInfo.todos && areaNotesInfo.todos.length > 0)
+                );
 
-              // Calculate area-specific patrol count
-              const areaPatrolCount = gateAssignmentsByArea[areaCode]?.filter(a => a.type === 'patrol').length || 0;
+                const areaPatrolCount = gateAssignmentsByArea[areaCode]?.filter(a => a.type === 'patrol').length || 0;
 
-              console.log(`Rendering area ${areaCode}:`, { areaNotesInfo, hasNotes, areaPatrolCount });
-
-              return (
-                <div key={areaCode} className="space-y-4">
-                  <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className={`bg-gradient-to-r ${areaData.color} p-2 rounded-lg`}>
-                        <MapPin className="text-white" size={20} />
-                      </div>
-                      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{areaData.name}</h3>
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
-                        {gateAssignmentsByArea[areaCode]?.filter(a => a.type === 'gate').length || 0} Gates
-                      </Badge>
-                      {areaPatrolCount > 0 && (
-                        <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs">
-                          {areaPatrolCount} Patrols
-                        </Badge>
-                      )}
-                      
-                      {/* Sticky Notes Indicator */}
-                      {hasNotes && (
-                        <div className="flex items-center gap-2 ml-auto">
-                          {areaNotesInfo.notes && areaNotesInfo.notes.trim() && (
-                            <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded p-2 max-w-xs">
-                              <div className="flex items-center gap-1 mb-1">
-                                <StickyNote size={12} className="text-yellow-600 dark:text-yellow-400" />
-                                <span className="text-xs font-medium text-yellow-800 dark:text-yellow-300">Note</span>
-                              </div>
-                              <p className="text-xs text-yellow-700 dark:text-yellow-300 line-clamp-2">
-                                {areaNotesInfo.notes}
-                              </p>
-                            </div>
-                          )}
-                          
-                          {areaNotesInfo.todos && areaNotesInfo.todos.length > 0 && (
-                            <div className="bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded p-2 max-w-xs">
-                              <div className="flex items-center gap-1 mb-1">
-                                <CheckSquare size={12} className="text-blue-600 dark:text-blue-400" />
-                                <span className="text-xs font-medium text-blue-800 dark:text-blue-300">
-                                  Tasks ({areaNotesInfo.todos.filter((t: any) => !t.completed).length}/{areaNotesInfo.todos.length})
-                                </span>
-                              </div>
-                              <div className="space-y-1">
-                                {areaNotesInfo.todos.slice(0, 2).map((todo: any, index: number) => (
-                                  <div key={index} className="flex items-center gap-1">
-                                    <div className={`w-1 h-1 rounded-full ${todo.completed ? 'bg-green-500' : 'bg-orange-500'}`} />
-                                    <span className={`text-xs ${todo.completed ? 'line-through text-blue-500' : 'text-blue-700 dark:text-blue-300'} line-clamp-1`}>
-                                      {todo.text}
-                                    </span>
-                                  </div>
-                                ))}
-                                {areaNotesInfo.todos.length > 2 && (
-                                  <span className="text-xs text-blue-500 dark:text-blue-400">
-                                    +{areaNotesInfo.todos.length - 2} more
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          )}
+                return (
+                  <div key={areaCode} className="space-y-4">
+                    <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className={`bg-gradient-to-r ${areaData.color} p-2 rounded-lg`}>
+                          <MapPin className="text-white" size={20} />
                         </div>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-                      {gateAssignmentsByArea[areaCode]?.map(assignment => (
-                        <EnhancedGateCard 
-                          key={assignment.id} 
-                          assignment={assignment} 
-                          onToggleWeapon={toggleWeapon} 
-                          getAssignmentColor={getAssignmentColor} 
-                          getRoleColor={getRoleColor}
-                          assignments={assignments}
-                          onAssignEmployee={handleContextMenuAssign}
-                        />
-                      ))}
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{areaData.name}</h3>
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                          {gateAssignmentsByArea[areaCode]?.filter(a => a.type === 'gate').length || 0} Gates
+                        </Badge>
+                        {areaPatrolCount > 0 && (
+                          <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs">
+                            {areaPatrolCount} Patrols
+                          </Badge>
+                        )}
+                        
+                        {/* Sticky Notes Indicator */}
+                        {hasNotes && (
+                          <div className="flex items-center gap-2 ml-auto">
+                            {areaNotesInfo.notes && areaNotesInfo.notes.trim() && (
+                              <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded p-2 max-w-xs">
+                                <div className="flex items-center gap-1 mb-1">
+                                  <StickyNote size={12} className="text-yellow-600 dark:text-yellow-400" />
+                                  <span className="text-xs font-medium text-yellow-800 dark:text-yellow-300">Note</span>
+                                </div>
+                                <p className="text-xs text-yellow-700 dark:text-yellow-300 line-clamp-2">
+                                  {areaNotesInfo.notes}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {areaNotesInfo.todos && areaNotesInfo.todos.length > 0 && (
+                              <div className="bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded p-2 max-w-xs">
+                                <div className="flex items-center gap-1 mb-1">
+                                  <CheckSquare size={12} className="text-blue-600 dark:text-blue-400" />
+                                  <span className="text-xs font-medium text-blue-800 dark:text-blue-300">
+                                    Tasks ({areaNotesInfo.todos.filter((t: any) => !t.completed).length}/{areaNotesInfo.todos.length})
+                                  </span>
+                                </div>
+                                <div className="space-y-1">
+                                  {areaNotesInfo.todos.slice(0, 2).map((todo: any, index: number) => (
+                                    <div key={index} className="flex items-center gap-1">
+                                      <div className={`w-1 h-1 rounded-full ${todo.completed ? 'bg-green-500' : 'bg-orange-500'}`} />
+                                      <span className={`text-xs ${todo.completed ? 'line-through text-blue-500' : 'text-blue-700 dark:text-blue-300'} line-clamp-1`}>
+                                        {todo.text}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {areaNotesInfo.todos.length > 2 && (
+                                    <span className="text-xs text-blue-500 dark:text-blue-400">
+                                      +{areaNotesInfo.todos.length - 2} more
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                        {gateAssignmentsByArea[areaCode]?.map(assignment => (
+                          <EnhancedGateCard 
+                            key={assignment.id} 
+                            assignment={assignment} 
+                            onToggleWeapon={toggleWeapon} 
+                            getAssignmentColor={getAssignmentColor} 
+                            getRoleColor={getRoleColor}
+                            assignments={assignments}
+                            onAssignEmployee={handleContextMenuAssign}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
-            {/* Special Assignments - Hidden in focus mode */}
-            {!focusMode && (
+              {/* Special Assignments - Normal mode only */}
               <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-xl shadow-lg border border-white/20 dark:border-slate-700/20">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
@@ -1285,8 +1372,8 @@ const Index = () => {
                   ))}
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </DragDropContext>
       </div>
     </div>
