@@ -969,7 +969,87 @@ const Index = () => {
 
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="space-y-6">
-            {/* Personnel Pools - Hidden in focus mode */}
+            {/* Personnel Pools - Show in focus mode but in left sidebar style */}
+            {focusMode && (
+              <div className="grid grid-cols-2 gap-4 max-w-2xl">
+                {/* Available Employees Pool */}
+                <Card className="bg-gradient-to-br from-emerald-50/90 to-green-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-emerald-200/50 dark:border-slate-700/50 shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-t-lg p-3">
+                    <CardTitle className="flex items-center gap-2 text-sm">
+                      <Users size={16} />
+                      Available Personnel
+                      <Badge className="bg-white/20 text-white text-xs">
+                        {unassignedPool?.employees.length || 0}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3">
+                    <div className="min-h-20 max-h-40 overflow-y-auto space-y-2">
+                      {unassignedPool?.employees.length === 0 && (
+                        <div className="text-center text-slate-400 py-4 text-xs">
+                          No available personnel
+                        </div>
+                      )}
+                      {unassignedPool?.employees.map((employee) => (
+                        <div key={employee.id} className="p-2 bg-white/90 dark:bg-slate-700/90 rounded-lg border shadow-sm">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6 border">
+                              <AvatarImage src={employee.image} alt={employee.name} />
+                              <AvatarFallback className="text-xs">
+                                {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-xs truncate">{employee.name}</div>
+                              <div className="text-xs text-slate-500">#{employee.badge}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Unavailable Personnel Pool */}
+                <Card className="bg-gradient-to-br from-red-50/90 to-orange-50/90 dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-xl border border-red-200/50 dark:border-slate-700/50 shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-t-lg p-3">
+                    <CardTitle className="flex items-center gap-2 text-sm">
+                      <UserMinus size={16} />
+                      Unavailable
+                      <Badge className="bg-white/20 text-white text-xs">
+                        {unavailablePool?.employees.length || 0}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3">
+                    <div className="min-h-20 max-h-40 overflow-y-auto space-y-1">
+                      {unavailablePool?.employees.length === 0 && (
+                        <div className="text-center text-slate-400 py-4 text-xs">
+                          No unavailable personnel
+                        </div>
+                      )}
+                      {unavailablePool?.employees.map(employee => (
+                        <div key={employee.id} className="p-2 bg-white/50 dark:bg-slate-700/50 rounded opacity-75">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={employee.image} alt={employee.name} />
+                              <AvatarFallback className="text-xs">
+                                {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-xs truncate">{employee.name}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Personnel Pools - Hidden in focus mode (original placement) */}
             {!focusMode && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Available Employees Pool */}

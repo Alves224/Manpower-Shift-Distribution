@@ -19,16 +19,54 @@ export interface Notification {
 
 interface NotificationStore {
   notifications: Notification[];
+  soundEnabled: boolean;
   addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   removeNotification: (id: string) => void;
   clearAll: () => void;
   getUnreadCount: () => number;
+  toggleSound: () => void;
 }
+
+// Function to play notification sound
+const playNotificationSound = (type: NotificationType) => {
+  try {
+    // Create audio context for better browser compatibility
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    // Different frequencies for different notification types
+    const frequencies = {
+      success: 800,
+      info: 600,
+      warning: 400,
+      error: 300
+    };
+    
+    const frequency = frequencies[type];
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+    oscillator.type = 'sine';
+    
+    // Set volume and duration
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+  } catch (error) {
+    console.log('Audio not supported or blocked');
+  }
+};
 
 export const useNotificationStore = create<NotificationStore>((set, get) => ({
   notifications: [],
+  soundEnabled: true,
   
   addNotification: (notification) => {
     const newNotification: Notification = {
@@ -41,6 +79,11 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     set((state) => ({
       notifications: [newNotification, ...state.notifications],
     }));
+    
+    // Play sound if enabled
+    if (get().soundEnabled) {
+      playNotificationSound(notification.type);
+    }
     
     // Show toast notification
     const toastConfig = {
@@ -90,4 +133,6 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   clearAll: () => set({ notifications: [] }),
   
   getUnreadCount: () => get().notifications.filter((n) => !n.read).length,
+  
+  toggleSound: () => set((state) => ({ soundEnabled: !state.soundEnabled })),
 }));

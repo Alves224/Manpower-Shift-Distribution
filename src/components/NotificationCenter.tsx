@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, X, Volume2, VolumeX } from 'lucide-react';
 import { useNotificationStore } from '@/hooks/useNotificationStore';
 import { format } from 'date-fns';
 
@@ -16,7 +16,9 @@ const NotificationCenter = () => {
     markAllAsRead, 
     removeNotification, 
     clearAll, 
-    getUnreadCount 
+    getUnreadCount,
+    soundEnabled,
+    toggleSound
   } = useNotificationStore();
 
   const unreadCount = getUnreadCount();
@@ -71,6 +73,14 @@ const NotificationCenter = () => {
               Notifications
             </h3>
             <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={toggleSound}
+                className={`text-xs h-6 px-2 ${soundEnabled ? 'text-green-600 hover:bg-green-100 dark:hover:bg-green-950/30' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+              >
+                {soundEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />}
+              </Button>
               {notifications.length > 0 && (
                 <>
                   <Button
