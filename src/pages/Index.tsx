@@ -682,9 +682,9 @@ const Index = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  YSOD Manpower Shift Distribution
+                  Shift Assignment Manager
                 </h1>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">Area-Based Assignment & Monitoring System</p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">Personnel Assignment & Monitoring System</p>
               </div>
             </div>
             
